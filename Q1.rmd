@@ -1,0 +1,98 @@
+---
+title: "Untitled"
+output: html_document
+date: '2023-06-10'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+
+```{r}
+data = Project_2_Historical_Data
+
+for(i in 0:100){
+  data[paste0(i, "/", 100-i)] = NA}
+
+for(i in 0:100){
+  alpha = i/100
+  for(j in 1:length(data$Date)){
+    data[j,i+4]= alpha*data$`Large Cap TR`[j] + (1-alpha)*data$FIXED[j]}}
+
+Alpha = data.frame(matrix(nrow=101, ncol=9))
+colnames(Alpha) = c("Spread_Ratio", "min", "Rank_min", "max", "Rank_max", "Mean", "Rank_mean", "STD_DEV", "Rank_STD_DEV") 
+Alpha$Spread_Ratio = colnames(data)[4:104]
+
+for(i in 1:length(Alpha$Spread_Ratio)){
+    Alpha[i, 2] = min(data[, i+3])
+    Alpha[i, 4] = max(data[, i+3])
+    Alpha[i, 6] = sum(data[,i+3])/length(data[,i+3])
+    Alpha[i, 6] = Alpha[i, 6]/97
+    Alpha[i, 8] = sqrt(var(data[, i+3]))}
+
+for(i in c(3,5,7,9)){
+  Alpha[, i] = as.integer(rank(Alpha[, i-1]))}
+
+plot(x=c(seq(0,100)), y = Alpha$min, main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
+
+Alpha["E[TR | TR > 0]"]=NA
+
+for(i in 4:104){
+  y = data.frame(data[,c(1,i)])
+  y = y %>% arrange(y[,2])
+  colnames(y) = c(paste0("Date",i-4), paste0(i-4, "/", 104-i))
+  y = subset(y, y[,2] > 0)
+  Alpha$`E[TR | TR > 0]`[i-3] = mean(y[,2])}
+
+
+Alpha["E[TR | TR < 0]"]=NA
+
+for(i in 4:104){
+  y = data.frame(data[,c(1,i)])
+  y = y %>% arrange(y[,2])
+  colnames(y) = c(paste0("Date",i-4), paste0(i-4, "/", 104-i))
+  y = subset(y, y[,2] < 0)
+  Alpha$`E[TR | TR < 0]`[i-3] = mean(y[,2])}
+
+Alpha["E[TR]"]=NA
+for(i in 1:101){
+  Alpha$`E[TR]` = (Alpha$`P(TR > 0)`[i] * Alpha$`E[TR | TR > 0]`[i]) + ((1 - Alpha$`P(TR > 0)`[i]) * Alpha$`E[TR | TR < 0]`[i])}
+
+colnames(Alpha)[12] = ""
+
+Minimum = Minimum[2:203]
+min(Minimum[1,])
+
+minimum = subset(Minimum, column = ())
+sum(2022 %in% Minimum[1,])
+Minimum[, c(seq(2, 202, 2))][1,]
+
+plot(x=c(seq(0,100)), y = Minimum[, c(seq(2, 202, 2))][1,], main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
+plot(x=c(seq(0,100)), y = Alpha$min, main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
+plot(x=c(seq(0,100)), y = Alpha$max, main = "Maximum Total Return", xlab = "Alpha", ylab = "Total Return")
+plot(x=c(seq(0,100)), y = Alpha$mean, main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
+plot(x=c(seq(0,100)), y = Alpha$STD_DEV, main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
+Minimum[, c(seq(2, 202, 2))][97,] == Alpha$max
+
+
+Alpha = Alpha %>%
+  mutate("Z-Score" = (0 - Alpha$Mean)/Alpha$STD_DEV)
+
+Alpha = Alpha %>%
+  mutate("P(TR > 0)" = pnorm(Alpha$`Z-Score`, lower.tail = FALSE))
+
+
+pnorm()
+pnorm(-0.8242498, lower.tail = FALSE)
+Minimum = cbind(vect[1:101])
+y = data.frame(data[,c(1,4)])
+arrange(y)
+sort(as.vector(y))
+as.vect
+y
+y = y %>% arrange(y[,2])
+
+
+```
