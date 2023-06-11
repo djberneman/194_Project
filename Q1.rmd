@@ -11,6 +11,9 @@ library(dplyr)
 
 
 ```{r}
+library(readxl)
+Project_2_Historical_Data <- read_excel("Project 2 Historical Data.xlsx", 
+    sheet = "60-40 Returns Annual", range = "B10:D107")
 data = Project_2_Historical_Data
 
 for(i in 0:100){
@@ -25,12 +28,113 @@ Alpha = data.frame(matrix(nrow=101, ncol=9))
 colnames(Alpha) = c("Spread_Ratio", "min", "Rank_min", "max", "Rank_max", "Mean", "Rank_mean", "STD_DEV", "Rank_STD_DEV") 
 Alpha$Spread_Ratio = colnames(data)[4:104]
 
+Alpha["Std_29"] = NA
+
 for(i in 1:length(Alpha$Spread_Ratio)){
     Alpha[i, 2] = min(data[, i+3])
     Alpha[i, 4] = max(data[, i+3])
     Alpha[i, 6] = sum(data[,i+3])/length(data[,i+3])
     Alpha[i, 6] = Alpha[i, 6]/97
-    Alpha[i, 8] = sqrt(var(data[, i+3]))}
+    Alpha[i, 8] = sqrt(var(data[, i+3]))
+    Alpha[i, 18] = sqrt(var(data[29:97, i+3]))}
+
+
+
+Returns_30yr = c(2.755,
+2.954166667,
+3.0975,
+3.443333333,
+3.4825,
+4.078333333,
+4.119166667,
+3.941666667,
+4.055,
+4.073333333,
+4.186666667,
+4.223333333,
+4.694166667,
+4.9,
+5.345833333,
+6.1725,
+6.734166667,
+5.998333333,
+5.796666667,
+6.9875,
+7.983333333,
+8.213333333,
+7.944166667,
+7.725,
+8.544166667,
+9.316666667,
+11.43333333,
+13.56333333,
+12.66333333,
+11.25583333,
+12.43333333,
+10.70333333,
+7.69,
+8.609166667,
+8.936666667,
+8.401666667,
+8.619166667,
+8.085,
+7.675,
+6.579166667,
+7.409166667,
+6.8075,
+6.723333333,
+6.5675,
+5.531666667,
+5.913333333,
+5.88,
+5.4675,
+5.405833333,
+5.0325,
+5.1,
+4.520833333,
+4.873333333,
+4.796666667,
+4.218333333,
+4.095,
+4.180833333,
+3.884166667,
+2.8825,
+3.459166667,
+3.269166667,
+2.818333333,
+2.58,
+2.886666667,
+3.095,
+2.525,
+1.51,
+2.0475,
+3.161666667
+)
+
+
+Returns_30yr=Returns_30yr/100
+
+Alpha["30-yr Return"] = NA
+97-29
+2022-1954
+x = 1954:2022
+
+yy = c()
+frame = data.frame(matrix(ncol=101, nrow=69))
+for(i in 4:104){
+  for(j in 29:97){
+    z = data[j,i] - Returns_30yr[j-28]
+    frame[j-28, i-3] = z/Alpha$Std_29[i-3]}}
+
+  
+
+vect = vector()
+for(i in 1:101){
+  vect = append(vect, mean(frame[, i]))}
+
+
+plot(x = 0:100, y = vect, main = "Historic Sharpe Ratio", ylab="Sharpe Ratio", xlab="alpha", type = "l")
+
 
 for(i in c(3,5,7,9)){
   Alpha[, i] = as.integer(rank(Alpha[, i-1]))}
@@ -117,5 +221,73 @@ Conf = Conf %>%
 plotCI(x = 0:100, y = Conf$`E[TR | TR > 0]`, li = Conf$`+lower`, ui = Conf$`+upper`)
 plotCI(x = 0:100, y = Conf$`E[TR | TR < 0]`, li = Conf$`-lower`, ui = Conf$`-upper`)
 plotCI(x = 0:100, y = Alpha$Mean, li = Conf$lower, ui = Conf$upper)
+
+dict = dict(init_keys = NULL, init_values = NULL)
+for(i in 4:104){
+  Dict[colnames(data)[i]] = data.frame(data[,i])
+}
+
+for(i in 1:101){
+  assign(paste0("Hist", i-1), ggplot(data=data, aes(x=data[1:97, i+3])) + geom_histogram())
+  
+  
+  
+}
+
+for(i in 1:101){
+  get(paste0("Hist", 0))
+}
+
+vect
+
+
+for(i in 0:100){
+  hist(x = data$Date[1:97], y=data[colnames(data)[1+4]], main = paste0("Histogram when alpha = ", 1, "%"))
+}
+data$Date
+par(mfrow=c(2,1))
+histout=apply(data,2,hist)
+
+hist(x = data$Date[1:97], y=data[colnames(data)[4]][1:97], main = paste0("Histogram when alpha = ", i, "%"))
+
+
+
+
+1,2,6,7,11,16
+
+colnames(data2) = c("Year",	"Ibbotson® SBBI® US Large-Cap Stocks (Total Return)", "Ibbotson® SBBI® US Large-Cap Stocks (Income Return)",	"Ibbotson® SBBI® US Large-Cap Stocks (Capital Appreciation  Return)",	"Ibbotson® SBBI® US Small-Cap Stocks (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Corporate Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Long-term (20-Year)  Government Bonds (Yield)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Yield)",	"Ibbotson® SBBI® US (30-Day) Treasury Bills",	"Ibbotson® SBBI® US Inflation")
+
+
+library(readxl)
+data2 <- read_excel("Project 2 Historical Data.xlsx", 
+    range = "A1186:P1283")
+data2 = data2[, c(1,2,6,7,11,16)]
+
+data3 = data.frame(matrix(ncol=6, nrow=97))
+colnames(data3) = colnames(data2)
+data3$Year = data2$Year
+
+data3$`Ibbotson® SBBI® US Inflation`[97] = 1 + data2$`Ibbotson® SBBI® US Inflation`[97]
+
+for(i in 96:1){
+  data3$`Ibbotson® SBBI® US Inflation`[i] = data3$`Ibbotson® SBBI® US Inflation`[i+1] * (1 + data2$`Ibbotson® SBBI® US Inflation`[i])
+}
+
+for(i in 2:5){
+  for(j in 1:97){
+    data3[j,i] = data2[j,i] * data3$`Ibbotson® SBBI® US Inflation`[i]}}
+
+Conf2a = data.frame(matrix(nrow=97, ncol=102))
+colnames(Conf2a) = c("Year", colnames(data)[4:104])
+
+Conf2b = data.frame(matrix(nrow=97, ncol=102))
+colnames(Conf2b) = c("Year", colnames(data)[4:104])
+
+for(i in 0:100){
+  alpha = i
+  alpha = alpha/100
+  for(j in 1:97){
+    TR = alpha * data2$`Ibbotson® SBBI® US Large-Cap Stocks (Total Return)`[]
+}
 
 ```
