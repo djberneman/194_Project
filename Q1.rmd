@@ -10,34 +10,32 @@ library(dplyr)
 ```
 
 
-```{r}
+```{r, warning=FALSE}
 library(readxl)
 Project_2_Historical_Data <- read_excel("Project 2 Historical Data.xlsx", 
     sheet = "60-40 Returns Annual", range = "B10:D107")
 data = Project_2_Historical_Data
 
 for(i in 0:100){
-  data[paste0(i, "/", 100-i)] = NA}
+  data[paste0("Alpha(Large Cap %) = ", i)] = NA}
 
 for(i in 0:100){
   alpha = i/100
   for(j in 1:length(data$Date)){
     data[j,i+4]= alpha*data$`Large Cap TR`[j] + (1-alpha)*data$FIXED[j]}}
 
-Alpha = data.frame(matrix(nrow=101, ncol=9))
-colnames(Alpha) = c("Spread_Ratio", "min", "Rank_min", "max", "Rank_max", "Mean", "Rank_mean", "STD_DEV", "Rank_STD_DEV") 
+Alpha = data.frame(matrix(nrow=101, ncol=6))
+colnames(Alpha) = c("Spread_Ratio", "min", "max", "Mean", "STD_DEV", "Std_29") 
 Alpha$Spread_Ratio = colnames(data)[4:104]
 
-Alpha["Std_29"] = NA
 
 for(i in 1:length(Alpha$Spread_Ratio)){
     Alpha[i, 2] = min(data[, i+3])
-    Alpha[i, 4] = max(data[, i+3])
-    Alpha[i, 6] = sum(data[,i+3])/length(data[,i+3])
-    Alpha[i, 6] = Alpha[i, 6]/97
-    Alpha[i, 8] = sqrt(var(data[, i+3]))
-    Alpha[i, 18] = sqrt(var(data[29:97, i+3]))}
-
+    Alpha[i, 3] = max(data[, i+3])
+    Alpha[i, 4] = sum(data[,i+3])
+    Alpha[i, 4] = Alpha[i, 4]/97
+    Alpha[i, 5] = sqrt(var(data[, i+3]))
+    Alpha[i, 6] = sqrt(var(data[29:97, i+3]))}
 
 
 Returns_30yr = c(2.755,
@@ -111,36 +109,27 @@ Returns_30yr = c(2.755,
 3.161666667
 )
 
-
 Returns_30yr=Returns_30yr/100
 
-Alpha["30-yr Return"] = NA
-97-29
-2022-1954
 x = 1954:2022
 
-yy = c()
-frame = data.frame(matrix(ncol=101, nrow=69))
+frame = data.frame(matrix(ncol=102, nrow=69))
+frame[,1] = c(seq(1954,2022))
 for(i in 4:104){
   for(j in 29:97){
     z = data[j,i] - Returns_30yr[j-28]
-    frame[j-28, i-3] = z/Alpha$Std_29[i-3]}}
+    frame[j-28, i-2] = z/Alpha$Std_29[i-3]}}
 
   
 
 vect = vector()
-for(i in 1:101){
+for(i in 2:102){
   vect = append(vect, mean(frame[, i]))}
 
 
 plot(x = 0:100, y = vect, main = "Historic Sharpe Ratio", ylab="Sharpe Ratio", xlab="alpha", type = "l")
 
-
-for(i in c(3,5,7,9)){
-  Alpha[, i] = as.integer(rank(Alpha[, i-1]))}
-
-plot(x=c(seq(0,100)), y = Alpha$min, main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
-
+# Conditional Expectation of total return given it will be positive
 Alpha["E[TR | TR > 0]"]=NA
 
 for(i in 4:104){
@@ -175,19 +164,6 @@ for(i in 4:104){
   y = subset(y, y[,2] < 0)
   Alpha$`SD[TR | TR < 0]`[i-3] = sqrt(var(y[,2]))}
 
-
-Alpha["E[TR]"]=NA
-for(i in 1:101){
-  Alpha$`E[TR]` = (Alpha$`P(TR > 0)`[i] * Alpha$`E[TR | TR > 0]`[i]) + ((1 - Alpha$`P(TR > 0)`[i]) * Alpha$`E[TR | TR < 0]`[i])}
-
-
-plot(x=c(seq(0,100)), y = Minimum[, c(seq(2, 202, 2))][1,], main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
-plot(x=c(seq(0,100)), y = Alpha$min, main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
-plot(x=c(seq(0,100)), y = Alpha$max, main = "Maximum Total Return", xlab = "Alpha", ylab = "Total Return")
-plot(x=c(seq(0,100)), y = Alpha$mean, main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
-plot(x=c(seq(0,100)), y = Alpha$STD_DEV, main = "Minimum Total Return", xlab = "Alpha", ylab = "Total Return")
-Minimum[, c(seq(2, 202, 2))][97,] == Alpha$max
-
 install.packages("plotrix")      
 library("plotrix")
 
@@ -198,61 +174,214 @@ Alpha = Alpha %>%
   mutate("P(TR > 0)" = pnorm(Alpha$`Z-Score`, lower.tail = FALSE))
 
 
-Conf = Alpha[c(1,6,8,10:13,15:16)]
+Alpha["E[TR]"]=NA
+for(i in 1:101){
+  Alpha$`E[TR]` = (Alpha$`P(TR > 0)`[i] * Alpha$`E[TR | TR > 0]`[i]) + ((1 - Alpha$`P(TR > 0)`[i]) * Alpha$`E[TR | TR < 0]`[i])}
+
+plot(x = 0:100, y = Alpha$`P(TR > 0)`, xlab="Alpha(Large Cap %)", ylab="Probability", main = "Probability Total Returns are Positive")
+
+
+Conf = Alpha[c(1,4,5,7:10,12:13)]
 Conf = Conf %>%
   mutate("+lower" = Conf$`E[TR | TR > 0]` - 1.96*Conf$`SD[TR | TR > 0]`)
 
 Conf = Conf %>%
   mutate("+upper" = Conf$`E[TR | TR > 0]` + 1.96*Conf$`SD[TR | TR > 0]`)
 
-Conf = Conf %>%
-  mutate("-lower" = Conf$`E[TR | TR < 0]` - 1.96*Conf$`SD[TR | TR < 0]`)
 
-Conf = Conf %>%
-  mutate("-upper" = Conf$`E[TR | TR < 0]` + 1.96*Conf$`SD[TR | TR < 0]`)
+plotCI(x = 0:100, y = Conf$`E[TR | TR > 0]`, li = Conf$`+lower`, ui = Conf$`+upper`, main="CI Assuming TR > 0", ylab="Total Return", xlab="alpha")
+abline(v = 59, col = "red", lty = "dashed")
+abline(h = max(Conf$`+lower`), col = "red", lty = "dashed")
+mtext("max(lower bound) @ 59", side=3, line = -1, adj = 0.1, cex=.7)
 
-Conf = Conf %>%
-  mutate("lower" = Conf$Mean - 1.96*Conf$STD_DEV)
+library(ggplot2)
 
-Conf = Conf %>%
-  mutate("upper" = Conf$Mean + 1.96*Conf$STD_DEV)
+library(ggthemes)
+install.packages("ggthemes")
 
-
-plotCI(x = 0:100, y = Conf$`E[TR | TR > 0]`, li = Conf$`+lower`, ui = Conf$`+upper`)
-plotCI(x = 0:100, y = Conf$`E[TR | TR < 0]`, li = Conf$`-lower`, ui = Conf$`-upper`)
-plotCI(x = 0:100, y = Alpha$Mean, li = Conf$lower, ui = Conf$upper)
-
-dict = dict(init_keys = NULL, init_values = NULL)
-for(i in 4:104){
-  Dict[colnames(data)[i]] = data.frame(data[,i])
-}
-
-for(i in 1:101){
-  assign(paste0("Hist", i-1), ggplot(data=data, aes(x=data[1:97, i+3])) + geom_histogram())
-  
-  
-  
-}
-
-for(i in 1:101){
-  get(paste0("Hist", 0))
-}
-
-vect
-
-
+df = data.frame(matrix(ncol=3, nrow=9797))
 for(i in 0:100){
-  hist(x = data$Date[1:97], y=data[colnames(data)[1+4]], main = paste0("Histogram when alpha = ", 1, "%"))
-}
-data$Date
-par(mfrow=c(2,1))
-histout=apply(data,2,hist)
+  x = i*97 + 1
+  y = (1+i)*97
+  df[x:y, 1] = data[,i+4]
+  df[x:y, 2] = paste0(colnames(data)[i+4])}
 
-hist(x = data$Date[1:97], y=data[colnames(data)[4]][1:97], main = paste0("Histogram when alpha = ", i, "%"))
+Alpha[c("Spread_Ratio", "min", "max")][97:101,]
+
+ggplot2::ggplot(data = df[1:1552,], mapping = aes(x=X1), freq=FALSE) + 
+  geom_histogram(binwidth=0.025)+
+  geom_density(col="red") +
+  scale_x_continuous(name = "Total Returns",
+                     breaks = seq(-0.15, 0.35, 0.1),
+                     limits=c(-0.15, 0.35)) +
+  scale_y_continuous(name = "Frequency") +
+  ggtitle("Histograms w/ Varying Alpha") +
+  scale_fill_gradient("Count", low = "blue", high = "red") +
+  geom_vline(aes(xintercept = mean(df$X1), group = X2), size = 1, colour = "#FF3721",
+                   linetype = "dashed") +
+  facet_wrap(~X2) + 
+  geom_line(aes(y = mean(df$X1)))+
+  theme(strip.text = element_text(size = 10),
+        axis.text = element_text(size=10),
+        strip.background = element_rect())
+
+ggplot2::ggplot(data = df[1553:3104,], mapping = aes(x=X1), freq=FALSE) + 
+  geom_histogram(binwidth=0.025)+
+  geom_density(col="red") +
+  scale_x_continuous(name = "Total Returns",
+                     breaks = seq(-0.15, 0.35, 0.1),
+                     limits=c(-0.15, 0.35)) +
+  scale_y_continuous(name = "Frequency") +
+  scale_fill_gradient("Count", low = "blue", high = "red") +
+  geom_vline(aes(xintercept = mean(df$X1), group = X2), size = 1, colour = "#FF3721",
+                   linetype = "dashed") +
+  facet_wrap(~X2) + 
+  geom_line(aes(y = mean(df$X1)))+
+  theme(strip.text = element_text(size = 10),
+        axis.text = element_text(size=10),
+        strip.background = element_rect())
+
+
+ggplot2::ggplot(data = df[3105:4656,], mapping = aes(x=X1), freq=FALSE) + 
+  geom_histogram(binwidth=0.025)+
+  geom_density(col="red") +
+  scale_x_continuous(name = "Total Returns",
+                     breaks = seq(-0.25, 0.35, 0.1),
+                     limits=c(-0.25, 0.35)) +
+  scale_y_continuous(name = "Frequency") +
+  scale_fill_gradient("Count", low = "blue", high = "red") +
+  geom_vline(aes(xintercept = mean(df$X1), group = X2), size = 1, colour = "#FF3721",
+                   linetype = "dashed") +
+  facet_wrap(~X2) + 
+  geom_line(aes(y = mean(df$X1)))+
+  theme(strip.text = element_text(size = 10),
+        axis.text = element_text(size=9),
+        strip.background = element_rect())
+
+ggplot2::ggplot(data = df[4657:6208,], mapping = aes(x=X1), freq=FALSE) + 
+  geom_histogram(binwidth=0.025)+
+  geom_density(col="red") +
+  scale_x_continuous(name = "Total Returns",
+                     breaks = seq(-0.3, 0.4, 0.15),
+                     limits=c(-0.3, 0.4)) +
+  scale_y_continuous(name = "Frequency") +
+  scale_fill_gradient("Count", low = "blue", high = "red") +
+  geom_vline(aes(xintercept = mean(df$X1), group = X2), size = 1, colour = "#FF3721",
+                   linetype = "dashed") +
+  facet_wrap(~X2) + 
+  geom_line(aes(y = mean(df$X1)))+
+  theme(strip.text = element_text(size = 10),
+        axis.text = element_text(size=10),
+        strip.background = element_rect())
+
+ggplot2::ggplot(data = df[6209:7760,], mapping = aes(x=X1), freq=FALSE) + 
+  geom_histogram(binwidth=0.025)+
+  geom_density(col="red") +
+  scale_x_continuous(name = "Total Returns",
+                     breaks = seq(-0.35, 0.45, 0.15),
+                     limits=c(-0.35, 0.45)) +
+  scale_y_continuous(name = "Frequency") +
+  scale_fill_gradient("Count", low = "blue", high = "red") +
+  geom_vline(aes(xintercept = mean(df$X1), group = X2), size = 1, colour = "#FF3721",
+                   linetype = "dashed") +
+  facet_wrap(~X2) + 
+  geom_line(aes(y = mean(df$X1)))+
+  theme(strip.text = element_text(size = 10),
+        axis.text = element_text(size=10),
+        strip.background = element_rect())
+
+ggplot2::ggplot(data = df[7761:9312,], mapping = aes(x=X1), freq=FALSE) + 
+  geom_histogram(binwidth=0.05)+
+  geom_density(col="red") +
+  scale_x_continuous(name = "Total Returns",
+                     breaks = seq(-0.45, 0.55, 0.2),
+                     limits=c(-0.45, 0.55)) +
+  scale_y_continuous(name = "Frequency") +
+  scale_fill_gradient("Count", low = "blue", high = "red") +
+  geom_vline(aes(xintercept = mean(df$X1), group = X2), size = 1, colour = "#FF3721",
+                   linetype = "dashed") +
+  facet_wrap(~X2) + 
+  geom_line(aes(y = mean(df$X1)))+
+  theme(strip.text = element_text(size = 10),
+        axis.text = element_text(size=10),
+        strip.background = element_rect())
+
+ggplot2::ggplot(data = df[9313:9797,], mapping = aes(x=X1), freq=FALSE) + 
+  geom_histogram(binwidth=0.05)+
+  geom_density(col="red") +
+  scale_x_continuous(name = "Total Returns",
+                     breaks = seq(-0.45, 0.55, 0.2),
+                     limits=c(-0.45, 0.55)) +
+  scale_y_continuous(name = "Frequency") +
+  scale_fill_gradient("Count", low = "blue", high = "red") +
+  geom_vline(aes(xintercept = mean(df$X1), group = X2), size = 1, colour = "#FF3721",
+                   linetype = "dashed") +
+  facet_wrap(~X2) + 
+  geom_line(aes(y = mean(df$X1)))+
+  theme(strip.text = element_text(size = 10),
+        axis.text = element_text(size=10),
+        strip.background = element_rect())
+
+
+
+i = 1
+plotly
+i = 2
+plotly
+i = 3
+plotly
+i = 4
+plotly
+i = 5
+plotly
+i = 6
+plotly
+
+ggplot2::ggplot(data = df[9313:9797,], mapping = aes(x=X1), freq=FALSE) + 
+  geom_histogram(binwidth=0.025)+
+  geom_density(col="red") +
+  scale_x_continuous(name = "Total Returns",
+                     breaks = seq(-0.15, 0.35, 0.1),
+                     limits=c(-0.15, 0.35)) +
+  scale_y_continuous(name = "Frequency") +
+  ggtitle("Histograms w/ Varying Alpha") +
+  scale_fill_gradient("Count", low = "blue", high = "red") +
+  geom_vline(aes(xintercept = mean(df$X1), group = X2), size = 1, colour = "#FF3721",
+                   linetype = "dashed") +
+  facet_wrap(~X2) + 
+  geom_line(aes(y = mean(df$X1)))+
+  theme(strip.text = element_text(size = 5),
+        axis.text = element_text(size=5),
+        strip.background = element_rect())
+
+histout=apply(data,2,hist, i=i+1, main = paste0("Alpha = ", i-1))
 
 
 
 
+```
+
+
+```{r}
+ggplot2::ggplot(data = df[1067:1163,], mapping = aes(x=X1), freq=FALSE) + 
+  geom_histogram(aes(y = ..density..))+
+  stat_function(fun = dnorm, colour = "red",
+                      arg = list(mean = mean(df$X1, na.rm = TRUE),
+                                 sd = sd(df$X1, na.rm = TRUE)))+
+  scale_x_continuous(name = "Total Returns",
+                     breaks = seq(-0.15, 0.35, 0.1),
+                     limits=c(-0.15, 0.35)) +
+  scale_y_continuous(name = "Density") +
+  ggtitle("Histograms w/ Varying Alpha") +
+  scale_fill_gradient("Count", low = "blue", high = "red") +
+  theme(strip.text = element_text(size = 5),
+        axis.text = element_text(size=5),
+        strip.background = element_rect())
+
+
+```
+
+```{r}
 1,2,6,7,11,16
 
 colnames(data2) = c("Year",	"Ibbotson® SBBI® US Large-Cap Stocks (Total Return)", "Ibbotson® SBBI® US Large-Cap Stocks (Income Return)",	"Ibbotson® SBBI® US Large-Cap Stocks (Capital Appreciation  Return)",	"Ibbotson® SBBI® US Small-Cap Stocks (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Corporate Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Long-term (20-Year)  Government Bonds (Yield)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Yield)",	"Ibbotson® SBBI® US (30-Day) Treasury Bills",	"Ibbotson® SBBI® US Inflation")
