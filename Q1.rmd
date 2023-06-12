@@ -196,9 +196,8 @@ mtext("max(lower bound) @ 59", side=3, line = -1, adj = 0.1, cex=.7)
 
 library(ggplot2)
 
-library(ggthemes)
 install.packages("ggthemes")
-
+library(ggthemes)
 df = data.frame(matrix(ncol=3, nrow=9797))
 for(i in 0:100){
   x = i*97 + 1
@@ -336,24 +335,15 @@ data2 <- read_excel("Project 2 Historical Data.xlsx",
 
 colnames(data2) = c("Year",	"Ibbotson® SBBI® US Large-Cap Stocks (Total Return)", "Ibbotson® SBBI® US Large-Cap Stocks (Income Return)",	"Ibbotson® SBBI® US Large-Cap Stocks (Capital Appreciation  Return)",	"Ibbotson® SBBI® US Small-Cap Stocks (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Corporate Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Long-term (20-Year)  Government Bonds (Yield)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Yield)",	"Ibbotson® SBBI® US (30-Day) Treasury Bills",	"Ibbotson® SBBI® US Inflation")
 
-data2 = data2[, c(1,2,6,7,11,16)]
+data2 = data2[, c(1,2,6,7,11)]
 
-
-data3 = data.frame(matrix(ncol=6, nrow=97))
-colnames(data3) = colnames(data2)
-data3$Year = data2$Year
-
-data3$`Ibbotson® SBBI® US Inflation`[97] = 1 + data2$`Ibbotson® SBBI® US Inflation`[97]
-
-for(i in 96:1){
-  data3$`Ibbotson® SBBI® US Inflation`[i] = data3$`Ibbotson® SBBI® US Inflation`[i+1] * (1 + data2$`Ibbotson® SBBI® US Inflation`[i])
+data2["Large_Cap"] = NA
+for(i in 1:97){
+  data2$Large_Cap[i] = data2$`Ibbotson® SBBI® US Large-Cap Stocks (Total Return)`[i] + data2$`Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Total Return)`[i]
 }
-
-for(i in 2:5){
-  for(j in 1:97){
-    data3[j,i] = data2[j,i] * data3$`Ibbotson® SBBI® US Inflation`[i]}}
-
-data3 = data.frame(matrix(ncol=6, nrow=97))
+  
+data2 = data2 %>%
+  mutate("Large_Cap" =data2[,2]+data2[,4])
 
 Conf2a = data.frame(matrix(nrow=97, ncol=102))
 colnames(Conf2a) = c("Year", colnames(data)[4:104])
@@ -361,11 +351,51 @@ colnames(Conf2a) = c("Year", colnames(data)[4:104])
 Conf2b = data.frame(matrix(nrow=97, ncol=102))
 colnames(Conf2b) = c("Year", colnames(data)[4:104])
 
+
 for(i in 0:100){
   alpha = i
-  alpha = alpha/100
+  alpha=alpha/100
   for(j in 1:97){
-    TR = alpha * data2$`Ibbotson® SBBI® US Large-Cap Stocks (Total Return)`[]
-}
+    long_corp = (1-alpha) * 0.35 * data2$`Ibbotson® SBBI® US Long-term (20-Year) Corporate Bonds (Total Return)`[j]
+    intermediate_gov = (1-alpha) * 0.65 * data2$`Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Total Return)`[j]
+    Large_Cap = alpha * data2$Large_Cap[j]
+    TR = long_corp+intermediate_gov+Large_Cap
+    Conf2a[j, i+2] = TR}}
+Conf2a$Year = data2$Year
+
+
+for(i in 0:100){
+  alpha = i
+  alpha=alpha/100
+  for(j in 1:97){
+    long_corp = (1-alpha) * 0.35 * data2$`Ibbotson® SBBI® US Long-term (20-Year) Corporate Bonds (Total Return)`[j]
+    intermediate_gov = (1-alpha) * 0.65 * data2$`Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Total Return)`[j]
+    Large_Cap = alpha * data2$`Ibbotson® SBBI® US Large-Cap Stocks (Total Return)`[j]
+    TR = long_corp+intermediate_gov+Large_Cap
+    Conf2b[j, i+2] = TR}}
+Conf2b$Year = data2$Year
+
+vect1 = vector()
+for(i in 2:102){
+  vect1 = append(vect1, mean(Conf2a[,i]))}
+
+vect2 = vector()
+for(i in 2:102){
+  vect2 = append(vect2, mean(Conf2b[,i]))}
+plot(x=0:100, y = vect2)
+
+data3 = data.frame(matrix(nrow=69, ncol=102))
+colnames(data3) = c("Year", colnames(data)[4:104])
+data3$Year[1:68] = data$Date[1:68]
+data3$Year[69] = "Interest Compounded Annually"
+for(i in 4:104){
+  for(j in 1:68){
+    prod = 1
+    y = j+29
+    x = data[j:y, i]
+    x = x + 1
+    for(k in 1:30){
+      prod = prod * x[k,1]}
+  data3[j,i-2] = prod^(1/30)-1}}
 
 ```
