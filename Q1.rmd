@@ -324,73 +324,20 @@ ggplot2::ggplot(data = df[9313:9797,], mapping = aes(x=X1), freq=FALSE) +
 
 
 
-i = 1
-plotly
-i = 2
-plotly
-i = 3
-plotly
-i = 4
-plotly
-i = 5
-plotly
-i = 6
-plotly
-
-ggplot2::ggplot(data = df[9313:9797,], mapping = aes(x=X1), freq=FALSE) + 
-  geom_histogram(binwidth=0.025)+
-  geom_density(col="red") +
-  scale_x_continuous(name = "Total Returns",
-                     breaks = seq(-0.15, 0.35, 0.1),
-                     limits=c(-0.15, 0.35)) +
-  scale_y_continuous(name = "Frequency") +
-  ggtitle("Histograms w/ Varying Alpha") +
-  scale_fill_gradient("Count", low = "blue", high = "red") +
-  geom_vline(aes(xintercept = mean(df$X1), group = X2), size = 1, colour = "#FF3721",
-                   linetype = "dashed") +
-  facet_wrap(~X2) + 
-  geom_line(aes(y = mean(df$X1)))+
-  theme(strip.text = element_text(size = 5),
-        axis.text = element_text(size=5),
-        strip.background = element_rect())
-
-histout=apply(data,2,hist, i=i+1, main = paste0("Alpha = ", i-1))
-
-
-
-
 ```
 
 
-```{r}
-ggplot2::ggplot(data = df[1067:1163,], mapping = aes(x=X1), freq=FALSE) + 
-  geom_histogram(aes(y = ..density..))+
-  stat_function(fun = dnorm, colour = "red",
-                      arg = list(mean = mean(df$X1, na.rm = TRUE),
-                                 sd = sd(df$X1, na.rm = TRUE)))+
-  scale_x_continuous(name = "Total Returns",
-                     breaks = seq(-0.15, 0.35, 0.1),
-                     limits=c(-0.15, 0.35)) +
-  scale_y_continuous(name = "Density") +
-  ggtitle("Histograms w/ Varying Alpha") +
-  scale_fill_gradient("Count", low = "blue", high = "red") +
-  theme(strip.text = element_text(size = 5),
-        axis.text = element_text(size=5),
-        strip.background = element_rect())
 
-
-```
 
 ```{r}
-1,2,6,7,11,16
-
-colnames(data2) = c("Year",	"Ibbotson® SBBI® US Large-Cap Stocks (Total Return)", "Ibbotson® SBBI® US Large-Cap Stocks (Income Return)",	"Ibbotson® SBBI® US Large-Cap Stocks (Capital Appreciation  Return)",	"Ibbotson® SBBI® US Small-Cap Stocks (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Corporate Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Long-term (20-Year)  Government Bonds (Yield)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Yield)",	"Ibbotson® SBBI® US (30-Day) Treasury Bills",	"Ibbotson® SBBI® US Inflation")
-
-
 library(readxl)
 data2 <- read_excel("Project 2 Historical Data.xlsx", 
     range = "A1186:P1283")
+
+colnames(data2) = c("Year",	"Ibbotson® SBBI® US Large-Cap Stocks (Total Return)", "Ibbotson® SBBI® US Large-Cap Stocks (Income Return)",	"Ibbotson® SBBI® US Large-Cap Stocks (Capital Appreciation  Return)",	"Ibbotson® SBBI® US Small-Cap Stocks (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Corporate Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Long-term (20-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Long-term (20-Year)  Government Bonds (Yield)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Total Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Income Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Capital Appreciation Return)",	"Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Yield)",	"Ibbotson® SBBI® US (30-Day) Treasury Bills",	"Ibbotson® SBBI® US Inflation")
+
 data2 = data2[, c(1,2,6,7,11,16)]
+
 
 data3 = data.frame(matrix(ncol=6, nrow=97))
 colnames(data3) = colnames(data2)
@@ -405,6 +352,8 @@ for(i in 96:1){
 for(i in 2:5){
   for(j in 1:97){
     data3[j,i] = data2[j,i] * data3$`Ibbotson® SBBI® US Inflation`[i]}}
+
+data3 = data.frame(matrix(ncol=6, nrow=97))
 
 Conf2a = data.frame(matrix(nrow=97, ncol=102))
 colnames(Conf2a) = c("Year", colnames(data)[4:104])
