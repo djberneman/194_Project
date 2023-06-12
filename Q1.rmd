@@ -384,10 +384,13 @@ for(i in 2:102){
   vect2 = append(vect2, mean(Conf2b[,i]))}
 plot(x=0:100, y = vect2)
 
-data3 = data.frame(matrix(nrow=69, ncol=102))
+
+
+data3 = data.frame(matrix(nrow=70, ncol=102))
 colnames(data3) = c("Year", colnames(data)[4:104])
 data3$Year[1:68] = data$Date[1:68]
-data3$Year[69] = "Interest Compounded Annually"
+data3$Year[69] = "mean(Interest Compounded Annually)"
+data3$Year[70] = "sd(Interest Compounded Annually)"
 for(i in 4:104){
   for(j in 1:68){
     prod = 1
@@ -398,4 +401,25 @@ for(i in 4:104){
       prod = prod * x[k,1]}
   data3[j,i-2] = prod^(1/30)-1}}
 
+for(i in 2:102){
+  x = data3[,i][1:68]
+  sum = 0
+  for(j in 1:length(x)){
+    sum = sum + x[j]}
+  mean = sum/68
+    data3[69, i] = mean
+    data3[70, i] = sqrt(var(x))}
+
+Sharpe_Ratio = data.frame(matrix(nrow=101, ncol = 2))
+colnames(Sharpe_Ratio) = c("Alpha", "Sharpe_Ratio")
+Sharpe_Ratio[,1] = colnames(data3)[2:102]
+for(i in 0:100){
+  diff = data3[69, i+2] - .05
+  ratio = diff/data3[70, i+2]
+  Sharpe_Ratio[i+1, 2] = ratio}
+
+
+vect3 = vector()
+append(vect3,
+  data3[,2]
 ```
