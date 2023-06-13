@@ -173,6 +173,23 @@ Alpha = Alpha %>%
 Alpha = Alpha %>%
   mutate("P(TR > 0)" = pnorm(Alpha$`Z-Score`, lower.tail = FALSE))
 
+Alpha = Alpha %>%
+  mutate("Z-Score2" = (-0.16 - Alpha$Mean)/Alpha$STD_DEV)
+
+Alpha = Alpha %>%
+  mutate("P(TR > -0.16)" = pnorm(Alpha$`Z-Score2`, lower.tail = FALSE))
+
+x = (Alpha$`P(TR > -0.16)`[82] - 0.95)
+y = x/Alpha$`P(TR > -0.16)`[83]
+y
+
+plot(x = 0:100, y = Alpha$`P(TR > 0)`, type = "l")
+
+plot(x = 0:100, y = Alpha$`P(TR > -0.16)`, type = "l")
+abline(h=0.95, col="red")
+curve(x=0:100, y = Alpha$`P(TR > -0.16)`)
+
+qnorm(0.95, lower.tail = TRUE)
 
 Alpha["E[TR]"]=NA
 for(i in 1:101){
@@ -181,6 +198,42 @@ for(i in 1:101){
 plot(x = 0:100, y = Alpha$`P(TR > 0)`, xlab="Alpha(Large Cap %)", ylab="Probability", main = "Probability Total Returns are Positive")
 
 
+
+
+weighted_TR <- read_excel("Pension Investment Calculation (Annual) MRP600 Sim.xlsx", 
+    sheet = "Weighted TR", col_names = FALSE)
+vect0 = vector()
+for(i in 1:length(colnames(weighted_TR))){
+  for(j in 1:length(weighted_TR$...1)){
+    vect0 = append(vect0, weighted_TR[j,i])
+  }
+}
+sum = 0
+for(i in 1:30000){
+  sum = sum + vect0[[i]]}
+mean = sum/30000
+mean
+list1 = list(rep(NA, 30000))
+for(i in 1:30000){
+  list1[i] = vect0[[i]]}
+
+list1 = data.frame(list1)
+list1 = data.frame(t(list1))
+
+sum1 = sum(list1$t.list1.[1:10000])
+mean1 = sum1/10000
+sd1 = sqrt(var(list1$t.list1.[1:10000]))
+diff1 = -0.16-mean1
+z_score1 = diff1/sd1
+pnorm(z_score1, lower.tail=TRUE)
+
+sd = sqrt(var(list1$t.list1.))
+diff = -0.16 - mean 
+z_score = diff/sd
+pnorm(z_score, lower.tail=TRUE)
+
+as.list(vect0)
+list1[[
 Conf = Alpha[c(1,4,5,7:10,12:13)]
 Conf = Conf %>%
   mutate("+lower" = Conf$`E[TR | TR > 0]` - 1.96*Conf$`SD[TR | TR > 0]`)
@@ -323,6 +376,7 @@ ggplot2::ggplot(data = df[9313:9797,], mapping = aes(x=X1), freq=FALSE) +
 
 
 
+
 ```
 
 
@@ -345,23 +399,12 @@ for(i in 1:97){
 data2 = data2 %>%
   mutate("Large_Cap" =data2[,2]+data2[,4])
 
-Conf2a = data.frame(matrix(nrow=97, ncol=102))
-colnames(Conf2a) = c("Year", colnames(data)[4:104])
 
-Conf2b = data.frame(matrix(nrow=97, ncol=102))
-colnames(Conf2b) = c("Year", colnames(data)[4:104])
+Conf2 = data.frame(matrix(nrow=97, ncol=102))
+colnames(Conf2) = c("Year", colnames(data)[4:104])
 
 
-for(i in 0:100){
-  alpha = i
-  alpha=alpha/100
-  for(j in 1:97){
-    long_corp = (1-alpha) * 0.35 * data2$`Ibbotson® SBBI® US Long-term (20-Year) Corporate Bonds (Total Return)`[j]
-    intermediate_gov = (1-alpha) * 0.65 * data2$`Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Total Return)`[j]
-    Large_Cap = alpha * data2$Large_Cap[j]
-    TR = long_corp+intermediate_gov+Large_Cap
-    Conf2a[j, i+2] = TR}}
-Conf2a$Year = data2$Year
+
 
 
 for(i in 0:100){
@@ -372,16 +415,13 @@ for(i in 0:100){
     intermediate_gov = (1-alpha) * 0.65 * data2$`Ibbotson® SBBI® US Intermediate-term (5-Year) Government Bonds (Total Return)`[j]
     Large_Cap = alpha * data2$`Ibbotson® SBBI® US Large-Cap Stocks (Total Return)`[j]
     TR = long_corp+intermediate_gov+Large_Cap
-    Conf2b[j, i+2] = TR}}
-Conf2b$Year = data2$Year
+    Conf2[j, i+2] = TR}}
+Conf2$Year = data2$Year
 
-vect1 = vector()
-for(i in 2:102){
-  vect1 = append(vect1, mean(Conf2a[,i]))}
 
 vect2 = vector()
 for(i in 2:102){
-  vect2 = append(vect2, mean(Conf2b[,i]))}
+  vect2 = append(vect2, mean(Conf2[,i]))}
 plot(x=0:100, y = vect2)
 
 
