@@ -164,7 +164,7 @@ for(i in 4:104){
   y = subset(y, y[,2] < 0)
   Alpha$`SD[TR | TR < 0]`[i-3] = sqrt(var(y[,2]))}
 
-install.packages("plotrix")      
+#install.packages("plotrix")      
 library("plotrix")
 
 Alpha = Alpha %>%
@@ -187,7 +187,6 @@ plot(x = 0:100, y = Alpha$`P(TR > 0)`, type = "l")
 
 plot(x = 0:100, y = Alpha$`P(TR > -0.16)`, type = "l")
 abline(h=0.95, col="red")
-curve(x=0:100, y = Alpha$`P(TR > -0.16)`)
 
 qnorm(0.95, lower.tail = TRUE)
 
@@ -232,8 +231,7 @@ diff = -0.16 - mean
 z_score = diff/sd
 pnorm(z_score, lower.tail=TRUE)
 
-as.list(vect0)
-list1[[
+
 Conf = Alpha[c(1,4,5,7:10,12:13)]
 Conf = Conf %>%
   mutate("+lower" = Conf$`E[TR | TR > 0]` - 1.96*Conf$`SD[TR | TR > 0]`)
@@ -459,7 +457,6 @@ for(i in 0:100){
   Sharpe_Ratio[i+1, 2] = ratio}
 
 
-vect3 = vector()
-append(vect3,
-  data3[,2]
+
+
 ```
