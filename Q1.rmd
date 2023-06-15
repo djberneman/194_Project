@@ -18,27 +18,34 @@ Monthly_Data <- read_excel("Project 2 Historical Data.xlsx",
     sheet = "60-40 Returns Monthly", range = "B10:D1174")
 
 month_12 = data.frame(matrix(ncol=3, nrow=1153))
-colnames(month_12) = colnames(Monthly_Data)
 month_12$Date = Monthly_Data$Date[1:1153]
-month_12["LC"] = NA
-month_12["Fix"] = NA
+month_12["LC_avg"] = NA
+month_12["Fix_avg"] = NA
+month_12["LC_mult"] = NA
+month_12["Fix_mult"] = NA
 
 for(i in 1:1153){
   sum1 = 0
   sum2 = 0
+  mult1 = 1
+  mult2 = 2
   x = 1
   while(x <= 12){
     sum1 = sum1 + Monthly_Data$`Large Cap TR`[i+x-1]
     sum2 = sum2 + Monthly_Data$FIXED[i+x-1]
+    mult1 = mult1 * (1 + Monthly_Data$`Large Cap TR`[i+x-1])
+    mult2 = mult2 * (1 + Monthly_Data$FIXED[i+x-1])
     x = x + 1}
-  month_12$`Large Cap TR`[i] = sum1
-  month_12$FIXED[i] = sum2
+  month_12$LC_add[i] = sum1
+  month_12$FIXED_add[i] = sum2
+  month_12$LC_mult[i] = mult1
+  month_12$FIXED_mult[i] = mult2
   avg1 = sum1/12
   avg2 = sum2/12
   cmpd1 = (1+avg1)^12-1
   cmpd2 = (1+avg2)^12-1
-  month_12$LC[i] = cmpd1
-  month_12$Fix[i] = cmpd2}
+  month_12$LC_avg[i] = cmpd1
+  month_12$FIXED_avg[i] = cmpd2}
 
 Compare = data.frame(matrix(ncol=5, nrow=97))
 colnames(Compare) = colnames(month_12)
@@ -47,9 +54,6 @@ for(i in 1:1153){
   if((i-1)%%12 == 0){
     Compare[x,] = month_12[i,]
     x = x + 1}}
-
-
-
 
 Project_2_Historical_Data <- read_excel("Project 2 Historical Data.xlsx", 
     sheet = "60-40 Returns Annual", range = "B10:D107")
@@ -66,7 +70,6 @@ sum3a=0
 sum3b=0
 sum4a=0
 sum4b=0
-
 for(i in 1:97){
   sum1a = (as.numeric(Compare[i,4]) - as.numeric(Compare[i,2]))^2
   sum2a = (as.numeric(Compare[i,4]) - as.numeric(Compare[i,3]))^2
