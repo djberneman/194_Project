@@ -7,14 +7,71 @@ date: '2023-06-10'
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
+install.packages("plotrix")    
 ```
 
 
 ```{r, warning=FALSE}
 library(readxl)
+
+Monthly_Data <- read_excel("Project 2 Historical Data.xlsx", 
+    sheet = "60-40 Returns Monthly", range = "B10:D1174")
+
+month_12 = data.frame(matrix(ncol=3, nrow=1153))
+colnames(month_12) = colnames(Monthly_Data)
+month_12$Date = Monthly_Data$Date[1:1153]
+month_12["LC"] = NA
+month_12["Fix"] = NA
+
+for(i in 1:1153){
+  sum1 = 0
+  sum2 = 0
+  x = 1
+  while(x <= 12){
+    sum1 = sum1 + Monthly_Data$`Large Cap TR`[i+x-1]
+    sum2 = sum2 + Monthly_Data$FIXED[i+x-1]
+    x = x + 1}
+  month_12$`Large Cap TR`[i] = sum1
+  month_12$FIXED[i] = sum2
+  avg1 = sum1/12
+  avg2 = sum2/12
+  cmpd1 = (1+avg1)^12-1
+  cmpd2 = (1+avg2)^12-1
+  month_12$LC[i] = cmpd1
+  month_12$Fix[i] = cmpd2}
+
+Compare = data.frame(matrix(ncol=5, nrow=97))
+colnames(Compare) = colnames(month_12)
+x = 1
+for(i in 1:1153){
+  if((i-1)%%12 == 0){
+    Compare[x,] = month_12[i,]
+    x = x + 1}}
+
+
 Project_2_Historical_Data <- read_excel("Project 2 Historical Data.xlsx", 
     sheet = "60-40 Returns Annual", range = "B10:D107")
-data = Project_2_Historical_Data
+colnames(Project_2_Historical_Data) = c("Date", "LCTR_true", "FIXED_true")
+
+Compare = cbind(Compare, Project_2_Historical_Data[,2:3])
+Compare$Date = Project_2_Historical_Data$Date
+Comparison = data.frame(matrix(ncol=5, nrow=97))
+colnames(Comparison) = c("Date", "Sum1", "Compounded1", "Sum2", "Compounded2")
+Comparison$Date = Project_2_Historical_Data$Date
+for(i in 1:97){
+  Comparison$Sum1[i] = abs(Compare$`Large Cap TR`[i] - Compare$LCTR_true[i])/Compare$LCTR_true[i]
+  Comparison$Compounded1[i] = abs(Compare$LC[i] - Compare$LCTR_true[i])/Compare$LCTR_true[i]
+  Comparison$Sum2[i] = abs(Compare$FIXED[i] - Compare$LCTR_true[i])/Compare$FIXED_true[i]
+  Comparison$Compounded2[i] = abs(Compare$Fix[i] - Compare$LCTR_true[i])/Compare$FIXED_true[i]}
+
+Comparison[98,] = c(rep(NA,5))
+
+Comparison[98,] = c("Total", sum(Comparison$Sum1), sum(Comparison$Compounded1), sum(Comparison$Sum2), sum(Comparison$Compounded2))
+
+
+
+
+
 
 for(i in 0:100){
   data[paste0("Alpha(Large Cap %) = ", i)] = NA}
@@ -164,7 +221,7 @@ for(i in 4:104){
   y = subset(y, y[,2] < 0)
   Alpha$`SD[TR | TR < 0]`[i-3] = sqrt(var(y[,2]))}
 
-#install.packages("plotrix")      
+  
 library("plotrix")
 
 Alpha = Alpha %>%
@@ -247,8 +304,6 @@ mtext("max(lower bound) @ 59", side=3, line = -1, adj = 0.1, cex=.7)
 
 library(ggplot2)
 
-install.packages("ggthemes")
-library(ggthemes)
 df = data.frame(matrix(ncol=3, nrow=9797))
 for(i in 0:100){
   x = i*97 + 1
