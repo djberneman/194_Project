@@ -49,12 +49,81 @@ for(i in 1:1153){
     x = x + 1}}
 
 
+
+
 Project_2_Historical_Data <- read_excel("Project 2 Historical Data.xlsx", 
     sheet = "60-40 Returns Annual", range = "B10:D107")
 colnames(Project_2_Historical_Data) = c("Date", "LCTR_true", "FIXED_true")
 
 Compare = cbind(Compare, Project_2_Historical_Data[,2:3])
 Compare$Date = Project_2_Historical_Data$Date
+Compare = Compare[c("Date", "Large Cap TR", "LC", "LCTR_true", "FIXED", "Fix", "FIXED_true")]
+sum1a=0
+sum1b=0
+sum2a=0
+sum2b=0
+sum3a=0
+sum3b=0
+sum4a=0
+sum4b=0
+
+for(i in 1:97){
+  sum1a = (as.numeric(Compare[i,4]) - as.numeric(Compare[i,2]))^2
+  sum2a = (as.numeric(Compare[i,4]) - as.numeric(Compare[i,3]))^2
+  sum3a = (as.numeric(Compare[i,7]) - as.numeric(Compare[i,5]))^2
+  sum4a = (as.numeric(Compare[i,7]) - as.numeric(Compare[i,6]))^2
+  sum1b = (as.numeric(Compare[i,2]))^2
+  sum2b = (as.numeric(Compare[i,3]))^2
+  sum3b = (as.numeric(Compare[i,5]))^2
+  sum4b = (as.numeric(Compare[i,6]))^2}
+RRMSE1 = sqrt((1/97)*sum1a/sum1b)
+RRMSE2 = sqrt((1/97)*sum2a/sum2b)
+RRMSE3 = sqrt((1/97)*sum3a/sum3b)
+RRMSE4 = sqrt((1/97)*sum4a/sum4b)
+Compare[98, 1:7] = c("Total", RRMSE1, RRMSE2, NA, RRMSE3, RRMSE4, NA)
+
+
+Compare <- Compare %>%
+  mutate("LC_diff1" = sqrt((1/97)*(Compare$`Large Cap TR` - Compare$LCTR_true)^2/Compare$LCTR_true))
+Compare <- Compare %>%
+  mutate("LC_diff2" = (1/97)*(Compare$LC - Compare$LCTR_true)^2/Compare$LCTR_true)
+Compare <- Compare %>%
+  mutate("Fix_diff1" = (1/97)*(Compare$FIXED - Compare$FIXED_true)^2/Compare$FIXED_true)
+Compare <- Compare %>%
+  mutate("Fix_diff2" = (1/97)*(Compare$Fix - Compare$FIXED_true)^2/Compare$FIXED_true)
+
+
+
+
+rel_root_mean_sq_error1 <- function(dataset1){
+  dataset_mean1 <- mean(dataset1$data)
+  dataset_mean2 <- mean(dataset2$data)
+  total_abs_error = 0
+  for(i in seq(1: length(data_quants1))){
+    error = (data_quants1[i] - fit_quants1[i])^2
+    total_abs_error = total_abs_error + error}
+  for(i in seq(1: length(data_quants2))){
+    error = (data_quants2[i] - fit_quants2[i])^2
+    total_abs_error = total_abs_error + error}
+  fitted_sq = 0
+  for(i in seq(1: length(data_quants1))){
+    sq = (fit_quants1[i])^2
+    fitted_sq = fitted_sq + sq}
+  for(i in seq(1: length(data_quants2))){
+    sq = (fit_quants2[i])^2
+    fitted_sq = fitted_sq + sq}
+  result = (total_abs_error / fitted_sq)^(1/2)
+  return(result[[1]])}
+
+
+Compare[98,] = c(rep(NA, 6), "Total", sum(Compare$LC_diff1[1:97]), sum(Compare$LC_diff2[1:97]), sum(Compare$Fix_diff1[1:97]), sum(Compare$Fix_diff2[1:97]))
+
+
+
+
+
+Compare
+
 Comparison = data.frame(matrix(ncol=5, nrow=97))
 colnames(Comparison) = c("Date", "Sum1", "Compounded1", "Sum2", "Compounded2")
 Comparison$Date = Project_2_Historical_Data$Date
