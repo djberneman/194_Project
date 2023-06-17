@@ -7,7 +7,12 @@ date: '2023-06-10'
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
-install.packages("plotrix")    
+install.packages("plotrix")
+install.packages("ggh4x")
+library(plotrix)
+library(ggplot2)
+library(lubridate)
+
 ```
 
 
@@ -17,142 +22,234 @@ library(readxl)
 Monthly_Data <- read_excel("Project 2 Historical Data.xlsx", 
     sheet = "60-40 Returns Monthly", range = "B10:D1174")
 
-month_12 = data.frame(matrix(ncol=3, nrow=1153))
-month_12$Date = Monthly_Data$Date[1:1153]
-month_12["LC_avg"] = NA
-month_12["Fix_avg"] = NA
-month_12["LC_mult"] = NA
-month_12["Fix_mult"] = NA
-
-for(i in 1:1153){
-  sum1 = 0
-  sum2 = 0
-  mult1 = 1
-  mult2 = 2
-  x = 1
-  while(x <= 12){
-    sum1 = sum1 + Monthly_Data$`Large Cap TR`[i+x-1]
-    sum2 = sum2 + Monthly_Data$FIXED[i+x-1]
-    mult1 = mult1 * (1 + Monthly_Data$`Large Cap TR`[i+x-1])
-    mult2 = mult2 * (1 + Monthly_Data$FIXED[i+x-1])
-    x = x + 1}
-  month_12$LC_add[i] = sum1
-  month_12$FIXED_add[i] = sum2
-  month_12$LC_mult[i] = mult1
-  month_12$FIXED_mult[i] = mult2
-  avg1 = sum1/12
-  avg2 = sum2/12
-  cmpd1 = (1+avg1)^12-1
-  cmpd2 = (1+avg2)^12-1
-  month_12$LC_avg[i] = cmpd1
-  month_12$FIXED_avg[i] = cmpd2}
-
-Compare = data.frame(matrix(ncol=5, nrow=97))
-colnames(Compare) = colnames(month_12)
-x = 1
-for(i in 1:1153){
-  if((i-1)%%12 == 0){
-    Compare[x,] = month_12[i,]
-    x = x + 1}}
-
-Project_2_Historical_Data <- read_excel("Project 2 Historical Data.xlsx", 
-    sheet = "60-40 Returns Annual", range = "B10:D107")
-colnames(Project_2_Historical_Data) = c("Date", "LCTR_true", "FIXED_true")
-
-Compare = cbind(Compare, Project_2_Historical_Data[,2:3])
-Compare$Date = Project_2_Historical_Data$Date
-Compare = Compare[c("Date", "Large Cap TR", "LC", "LCTR_true", "FIXED", "Fix", "FIXED_true")]
-sum1a=0
-sum1b=0
-sum2a=0
-sum2b=0
-sum3a=0
-sum3b=0
-sum4a=0
-sum4b=0
-for(i in 1:97){
-  sum1a = (as.numeric(Compare[i,4]) - as.numeric(Compare[i,2]))^2
-  sum2a = (as.numeric(Compare[i,4]) - as.numeric(Compare[i,3]))^2
-  sum3a = (as.numeric(Compare[i,7]) - as.numeric(Compare[i,5]))^2
-  sum4a = (as.numeric(Compare[i,7]) - as.numeric(Compare[i,6]))^2
-  sum1b = (as.numeric(Compare[i,2]))^2
-  sum2b = (as.numeric(Compare[i,3]))^2
-  sum3b = (as.numeric(Compare[i,5]))^2
-  sum4b = (as.numeric(Compare[i,6]))^2}
-RRMSE1 = sqrt((1/97)*sum1a/sum1b)
-RRMSE2 = sqrt((1/97)*sum2a/sum2b)
-RRMSE3 = sqrt((1/97)*sum3a/sum3b)
-RRMSE4 = sqrt((1/97)*sum4a/sum4b)
-Compare[98, 1:7] = c("Total", RRMSE1, RRMSE2, NA, RRMSE3, RRMSE4, NA)
-
-
-Compare <- Compare %>%
-  mutate("LC_diff1" = sqrt((1/97)*(Compare$`Large Cap TR` - Compare$LCTR_true)^2/Compare$LCTR_true))
-Compare <- Compare %>%
-  mutate("LC_diff2" = (1/97)*(Compare$LC - Compare$LCTR_true)^2/Compare$LCTR_true)
-Compare <- Compare %>%
-  mutate("Fix_diff1" = (1/97)*(Compare$FIXED - Compare$FIXED_true)^2/Compare$FIXED_true)
-Compare <- Compare %>%
-  mutate("Fix_diff2" = (1/97)*(Compare$Fix - Compare$FIXED_true)^2/Compare$FIXED_true)
-
-
-
-
-rel_root_mean_sq_error1 <- function(dataset1){
-  dataset_mean1 <- mean(dataset1$data)
-  dataset_mean2 <- mean(dataset2$data)
-  total_abs_error = 0
-  for(i in seq(1: length(data_quants1))){
-    error = (data_quants1[i] - fit_quants1[i])^2
-    total_abs_error = total_abs_error + error}
-  for(i in seq(1: length(data_quants2))){
-    error = (data_quants2[i] - fit_quants2[i])^2
-    total_abs_error = total_abs_error + error}
-  fitted_sq = 0
-  for(i in seq(1: length(data_quants1))){
-    sq = (fit_quants1[i])^2
-    fitted_sq = fitted_sq + sq}
-  for(i in seq(1: length(data_quants2))){
-    sq = (fit_quants2[i])^2
-    fitted_sq = fitted_sq + sq}
-  result = (total_abs_error / fitted_sq)^(1/2)
-  return(result[[1]])}
-
-
-Compare[98,] = c(rep(NA, 6), "Total", sum(Compare$LC_diff1[1:97]), sum(Compare$LC_diff2[1:97]), sum(Compare$Fix_diff1[1:97]), sum(Compare$Fix_diff2[1:97]))
-
-
-
-
-
-Compare
-
-Comparison = data.frame(matrix(ncol=5, nrow=97))
-colnames(Comparison) = c("Date", "Sum1", "Compounded1", "Sum2", "Compounded2")
-Comparison$Date = Project_2_Historical_Data$Date
-for(i in 1:97){
-  Comparison$Sum1[i] = abs(Compare$`Large Cap TR`[i] - Compare$LCTR_true[i])/Compare$LCTR_true[i]
-  Comparison$Compounded1[i] = abs(Compare$LC[i] - Compare$LCTR_true[i])/Compare$LCTR_true[i]
-  Comparison$Sum2[i] = abs(Compare$FIXED[i] - Compare$LCTR_true[i])/Compare$FIXED_true[i]
-  Comparison$Compounded2[i] = abs(Compare$Fix[i] - Compare$LCTR_true[i])/Compare$FIXED_true[i]}
-
-Comparison[98,] = c(rep(NA,5))
-
-Comparison[98,] = c("Total", sum(Comparison$Sum1), sum(Comparison$Compounded1), sum(Comparison$Sum2), sum(Comparison$Compounded2))
-
-
-
-
-
-
 for(i in 0:100){
-  data[paste0("Alpha(Large Cap %) = ", i)] = NA}
+  Monthly_Data[paste0("Alpha(Large Cap %) = ", i)] = NA
+  }
 
 for(i in 0:100){
   alpha = i/100
-  for(j in 1:length(data$Date)){
-    data[j,i+4]= alpha*data$`Large Cap TR`[j] + (1-alpha)*data$FIXED[j]}}
+  for(j in 1:1164){
+    Monthly_Data[j,i+4]= (alpha*Monthly_Data$`Large Cap TR`[j]) + ((1-alpha)*Monthly_Data$FIXED[j])}}
 
+
+month_12 = data.frame(matrix(ncol=3, nrow=1153))
+colnames(month_12) = c("Date", "LC_mult", "Fixed_mult")
+month_12$Date = Monthly_Data$Date[1:1153]
+
+for(i in 1:1153){
+  mult1 = 1
+  mult2 = 1
+  x = 1
+  while(x <= 12){
+    mult1 = mult1 * (1 + Monthly_Data$`Large Cap TR`[i+x-1])
+    mult2 = mult2 * (1 + Monthly_Data$FIXED[i+x-1])
+    x = x + 1}
+  month_12$LC_mult[i] = -(1 - mult1)
+  month_12$Fixed_mult[i] = -(1 - mult2)}
+```
+
+```{r}
+Monthly = data.frame(matrix(ncol=3, nrow=1153))
+colnames(Monthly) = c("Date", "LCTR", "FIXED_TR")
+Monthly$Date = month_12$Date
+Monthly$LCTR = month_12$LC_mult
+Monthly$FIXED_TR = month_12$Fixed_mult
+for(i in 0:100){
+  Monthly[paste0("Alpha", i)] = NA
+  }
+
+
+for(i in 0:100){
+  alpha = i/100
+  for(j in 1:1153){
+    Monthly[j,i+4]= (alpha*Monthly$LCTR[j]) + ((1-alpha)*Monthly$FIXED_TR[j])}}
+
+
+Alpha = data.frame(matrix(nrow=101, ncol=5))
+colnames(Alpha) = c("Spread_Ratio", "min", "max", "Mean", "STD_DEV") 
+Alpha$Spread_Ratio = colnames(Monthly)[4:104]
+
+
+for(i in 1:101){
+    Alpha[i, 2] = min(Monthly[, i+3])
+    Alpha[i, 3] = max(Monthly[, i+3])
+    Alpha[i, 4] = sum(Monthly[,i+3])
+    Alpha[i, 4] = Alpha[i, 4]/1153
+    Alpha[i, 5] = sqrt(var(Monthly[, i+3]))}
+
+
+sig_loss1 = qnorm(0.05, mean = mean(Monthly$Alpha60), sd = sqrt(var(Monthly$Alpha60)), lower.tail = TRUE)
+sig_loss2 = qnorm(0.01, mean = mean(Monthly$Alpha60), sd = sqrt(var(Monthly$Alpha60)), lower.tail = TRUE)
+sig_loss3 = qnorm(0.001, mean = mean(Monthly$Alpha60), sd = sqrt(var(Monthly$Alpha60)), lower.tail = TRUE)
+sig_loss4 = qnorm(0.0001, mean = mean(Monthly$Alpha60), sd = sqrt(var(Monthly$Alpha60)), lower.tail = TRUE)
+
+significant_losses = subset(Monthly, Monthly$Alpha60 <= sig_loss1)[c("Date", "Alpha60")]
+require(zoo)
+significant_losses["Year"] <- year(significant_losses$Date)
+significant_losses["Month"] = months(significant_losses$Date)
+significant_losses$Month <- factor(significant_losses$Month, levels = rev(month.name))
+significant_losses$Year <- factor(significant_losses$Year, levels = unique(year(significant_losses$Date)))
+significant_losses["Probability"] = NA
+
+for(i in 1:54){
+  if(significant_losses$Alpha60[i] < sig_loss1){
+    significant_losses$Probability[i] = "< 5%"}
+  if(significant_losses$Alpha60[i] < sig_loss2){
+    significant_losses$Probability[i] = "< 1%"}
+  if(significant_losses$Alpha60[i] < sig_loss3){
+    significant_losses$Probability[i] = "< 0.1%"}
+  if(significant_losses$Alpha60[i] < sig_loss4){
+    significant_losses$Probability[i] = "< 0.01%"}}
+
+significant_losses$Probability <- factor(significant_losses$Probability, levels = c("< 5%", "< 1%", "< 0.1%", "< 0.01%"))
+
+
+scales_x <- list(
+  c(`1936`, `1974`, `2022`) = scale_x_continuous(limits = c(0, 0.2), breaks = seq(5, 25, 5)),
+  `f` = scale_y_continuous(limits = c(0, 40), breaks = seq(0, 40, 10)),
+  `r` = scale_y_continuous(limits = c(10, 20), breaks = seq(10, 20, 2))
+
+
+significant_losses %>%
+  ggplot()+
+  geom_col(aes(x=abs(Alpha60), y = Month, fill = Probability)) +
+  scale_x_continuous(breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5)) +
+  facet_wrap(~as.character(Year)) +
+  labs(title="12-Month Significant Losses on the 60-40 Portfolio",
+  x = "Total Loss on Returns")+
+  scale_fill_manual(values  = c("< 5%" = "yellow",
+                                "< 1%" = "orange",
+                                "< 0.1%" = "orangered1",
+                                "< 0.01%" = "red2")) +
+  geom_text(aes(x = abs(Alpha60), y = Month, label = round(Alpha60, 4)), hjust=1) +
+  theme(strip.text = element_text(size = 15),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 15),
+        title =element_text(size=18, face='bold'),
+        legend.text = element_text(size = 12)) +
+  ggh4x::force_panelsizes(rows = NULL, cols = NULL, respect = NULL)
+
+significant_losses[1:26,] %>%
+  group_by(Year, Month) %>%
+  ggplot()+
+  labs(title="Compounded 12-Month Significant Losses of the 60-40 Portfolio",
+  subtitle = "1929-1936",
+       x = "Total Loss on Returns")+
+  geom_col(aes(x = Alpha60, fill = Month),)+
+  facet_wrap(~Year) +
+  ylim(0,-0.3))
+```
+
+```{r}
+Annual60 = subset(Monthly, months(Monthly$Date) == "January")[c("Date", "Alpha60")]
+colnames(Annual60) = c("Date", "TR")
+
+Monthly60 = Monthly[c("Date", "Alpha60")]
+colnames(Monthly60) = c("Date", "TR")
+
+
+for(i in 1:1153){
+  if(Monthly60$Alpha60[i] < -0.225){
+    Monthly60$line_color[i] = "red"}
+  if(Monthly60$Alpha60[i] > -0.225 & Monthly60$Alpha60[i] < -0.075){
+    Monthly60$line_color[i] = "redorange"}
+  if(Monthly60$Alpha60[i] > -0.075 & Monthly60$Alpha60[i] < 0.075){
+    Monthly60$line_color[i] = "orange"}
+  if(Monthly60$Alpha60[i] > 0.075 & Monthly60$Alpha60[i] < 0.225){
+    Monthly60$line_color[i] = "yelloworange"}
+  if(Monthly60$Alpha60[i] > 0.225 & Monthly60$Alpha60[i] < 0.3){
+    Monthly60$line_color[i] = "yellow"}
+  if(Monthly60$Alpha60[i] > 0.3){
+    Monthly60$line_color[i] = "green"}}
+
+Annual60 <- Annual60 %>%
+  mutate("Date" = year(Annual60$Date))
+
+
+
+line_color <- as.factor(c("1", "2", "3", "4", "5", "6", "7"))
+TR = Annual60$TR
+line_color[TR < -0.2] <- 1
+line_color[TR > -0.2 & TR < -0.1] <- 2
+line_color[TR > -0.1 & TR < 0] <- 3
+line_color[TR > 0 & TR < 0.1] <- 4
+line_color[TR > 0.1 & TR < 0.2] <- 5
+line_color[TR > 0.2 & TR < 0.3] <- 6
+line_color[TR > 0.3] <- 7
+Annual60["line_color"] <- line_color
+
+
+for(i in 1:97){
+  if(Annual60$Alpha60[i] < -0.2){
+    Annual60$line_color[i] = "red4"}
+  if(Annual60$Alpha60[i] > -0.2 & Annual60$Alpha60[i] < -0.1){
+    Annual60$line_color[i] = "redorange"}
+  if(Annual60$Alpha60[i] > -0.1 & Annual60$Alpha60[i] < 0){
+    Annual60$line_color[i] = "orange"}
+  if(Annual60$Alpha60[i] > 0 & Annual60$Alpha60[i] < 0.1){
+    Annual60$line_color[i] = "goldenrod1"}
+  if(Annual60$Alpha60[i] > 0.1 & Annual60$Alpha60[i] < 0.2){
+    Annual60$line_color[i] = "yellow"}
+  if(Annual60$Alpha60[i] > 0.2 & Annual60$Alpha60[i] < 0.3){
+    Annual60$line_color[i] = "greenyellow"}
+  if(Annual60$Alpha60[i] > 0.3){
+    Annual60$line_color[i] = "green"}}
+
+library(lubridate)
+
+ggplot2::ggplot(data = Annual60, aes(x=Date, y = Alpha60, color = line_color)) + geom_line(aes(group = 1)) + geom_point(data = Annual60, aes(x=Date, y = Alpha60, color = line_color)) + ylim(-0.3, 0.4)
+
+Annual60 <- Annual60 %>%
+  mutate(line_color = c(factor(Annual60$line_color)))
+
+
+ggplot(data = Annual60, aes(x=Date, y = Alpha60, color = line_color)) + geom_line(data = Annual60, aes(color = c(Alpha60 < -0.225, Alpha60 > -0.225 & Alpha60 < -0.075)))+ geom_point(data = Annual60, aes(color = c(Alpha60 < -0.225, Alpha60 > -0.225 & Alpha60 < -0.075))) + ylim(-0.3, 0.4)
+
+plot(x=Annual60$Date, y=Annual60$Alpha60, col = Annual60$line_color)
+
+
+
+myPlot = function(y, x,
+    colors=c("blue","red"),
+    xlab=deparse(substitute(x)),
+    ylab=deparse(substitute(y)), ...)
+{
+    n = length(x)
+    y.pos = y.neg = y
+    y.pos[y<0] = 0
+    y.neg[y>0] = 0
+    plot(y~x, type="n", xlab=xlab, ylab=ylab, ...)
+    grid()
+    polygon(c(x[1],x,x[n]),c(0,y.pos,0),col=colors[1],border=NA)
+    polygon(c(x[1],x,x[n]),c(0,y.neg,0),col=colors[2],border=NA)}
+
+myPlot(x = Annual60$Date, y = Annual60$Alpha60)
+
+ggplot2::ggplot(data = Annual60, aes(x=Date, y = Alpha60, color = line_color)) + geom_line(aes(group = 1)) + geom_point(data = Annual60, aes(x=Date, y = Alpha60, color = line_color)) + ylim(-0.3, 0.4)
+
+A = 
+plot(A~y2, data, type="h", lwd=2, col=c("blue","red")[1+(A<0)],xlab="Year")
+
+
+install.packages("RColorBrewer")
+library(RColorBrewer)
+my_colors = brewer.pal(7, "Set2") 
+
+clplot(x=(Monthly$Date), y=Monthly$Alpha60, main="", lwd=1, levels=c(-0.3, -0.15, 0, 0.15, 0.30, 0.45, 0.6), col=my_colors, showcuts=T , bty="n", ylim=c(-0.5,0.6))
+
+my_colors = c("red4", "orangered2", "yellow", "green", "blue")
+clplot(x=Annual60$Date, y=Annual60$Alpha60, main="", lwd=1, levels=c(-0.225, -0.075, 0.075, 0.225, 0.30), col=my_colors, showcuts=F , bty="n", ylim=c(-0.3,0.4), xlim = c(1925, 2025), xlab="Year", ylab="Total Return", title(main = "Annual 60/40 Total Returns"))
+
+
+for(i in 0:100){
+  alpha = i/100
+  for(j in 1:1153){
+    Monthly[j,i+4]= alpha*Monthly$LCTR[j] + (1-alpha)*Monthly$FIXED_TR[j]}}
+
+plot(xlab= "Alpha", x = 0:10 0, ylab="Total Return", y= Monthly[1153, 4:104], main = "All 2022 Total Returns", par(lty = 1))
+```
+
+```{r}
 Alpha = data.frame(matrix(nrow=101, ncol=6))
 colnames(Alpha) = c("Spread_Ratio", "min", "max", "Mean", "STD_DEV", "Std_29") 
 Alpha$Spread_Ratio = colnames(data)[4:104]
