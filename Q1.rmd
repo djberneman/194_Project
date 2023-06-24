@@ -104,11 +104,6 @@ for(i in 1:54){
 significant_losses$Probability <- factor(significant_losses$Probability, levels = c("< 5%", "< 1%", "< 0.1%", "< 0.01%"))
 
 
-scales_x <- list(
-  c(`1936`, `1974`, `2022`) = scale_x_continuous(limits = c(0, 0.2), breaks = seq(5, 25, 5)),
-  `f` = scale_y_continuous(limits = c(0, 40), breaks = seq(0, 40, 10)),
-  `r` = scale_y_continuous(limits = c(10, 20), breaks = seq(10, 20, 2))
-
 
 significant_losses %>%
   ggplot()+
@@ -127,7 +122,9 @@ significant_losses %>%
         axis.title = element_text(size = 15),
         title =element_text(size=18, face='bold'),
         legend.text = element_text(size = 12)) +
-  ggh4x::force_panelsizes(rows = NULL, cols = NULL, respect = NULL)
+  facet_grid(~ Year, scales = "free_x") +
+  facetted_pos_scales(x = list(NULL, scale_x_continuous(breaks = c(0, 0.2, 0.4))))
+
 
 significant_losses[1:26,] %>%
   group_by(Year, Month) %>%
