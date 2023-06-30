@@ -37,9 +37,6 @@ Furthermore, the 2022 experience is unlikely to repeat itself once interest rate
 ```{r, warning=FALSE}
 library(readxl)
 
-Monthly_Data <- read_excel("Project 2 Historical Data.xlsx", 
-    sheet = "60-40 Returns Monthly", range = "B10:D1174")
-
 Monthly_Data1 <- read_excel("Project 2 Historical Data.xlsx", 
     sheet = "60-40 Returns Monthly", range = "B10:D1174")
 
@@ -47,33 +44,175 @@ Data <- read_excel("Project 2 Historical Data.xlsx",
     sheet = "60-40 Returns Annual", range = "B10:D107")
 
 colnames(Data) = c("Date", "LCTR_true", "FIXED_true")
+```
 
-# # 12-month returns
-# for(i in 1:1153){
-#   x=1
-#   data1 = 1
-#   data2 = 1
-#   while(x <= 12){
-#     data1 = data1 * (1 + Monthly_Data$`Large Cap TR`[i+x-1])
-#     data2 = data2 * (1 + Monthly_Data$FIXED[i+x-1])
-#     x = x + 1}
-#   Monthly_Data$`Large Cap TR`[i] = data1 - 1
-#   Monthly_Data$FIXED[i] = data2 - 1}
-# 
-# Monthly_Data = Monthly_Data[1:1153,]
-# 
-# 12-month allocation returns
-# for(i in 0:100){
-#   alpha = i/100
-#   Monthly_Data[paste0("LC", i)] = NA
-#   for(j in 1:1153){
-#     Monthly_Data[j, length(colnames(Monthly_Data))] = alpha*Monthly_Data$`Large Cap TR`[j]}
-#   Monthly_Data[paste0("FIX", i)] = NA
-#   for(j in 1:1153){
-#     Monthly_Data[j, length(colnames(Monthly_Data))] = (1-alpha)*Monthly_Data$FIXED[j]}
-#   Monthly_Data[paste0("Folio", i)] = NA
-#   for(j in 1:1153){
-#     Monthly_Data[j, length(colnames(Monthly_Data))] = Monthly_Data[j, length(colnames(Monthly_Data))-1] + Monthly_Data[j, length(colnames(Monthly_Data))-2]}}
+# Inflation and Treasury bond
+```{r}
+
+IB <- read_excel("Project 2 Historical Data.xlsx",
+    range = "AO11:AR1175", col_types = c("numeric",
+        "skip", "skip", "numeric"))
+
+IB = IB[,c(3,1:2)]
+colnames(IB) = c("Date", "t_bill", "inflation")
+
+IB_plus1 = IB
+IB_plus1[,2:3] = 1 + IB_plus1[,2:3]
+
+# 12-month compounded
+IB_Monthly_cmp12 = IB
+IB_Monthly_cmp12 = IB_Monthly_cmp12[1:1153,]
+IB_Monthly_cmp12[,2:3]=NA
+
+# 30 yr compounded
+IB_Monthly_cmp30 = IB
+IB_Monthly_cmp30 = IB_Monthly_cmp30[1:805,]
+IB_Monthly_cmp30[,2:3]=NA
+
+# 12-month arith avg
+IB_Monthly_arith12 = IB
+IB_Monthly_arith12 = IB_Monthly_arith12[1:1153,]
+IB_Monthly_arith12[,2:3]=NA
+
+# 30 yr arith avg
+IB_Monthly_arith30 = IB
+IB_Monthly_arith30 = IB_Monthly_arith30[1:805,]
+IB_Monthly_arith30[,2:3]=NA
+
+# 12-month geom avg
+IB_Monthly_geom12 = IB
+IB_Monthly_geom12 = IB_Monthly_geom12[1:1153,]
+IB_Monthly_geom12[,2:3]=NA
+
+# 30 yr geom avg
+IB_Monthly_geom30 = IB
+IB_Monthly_geom30 = IB_Monthly_geom30[1:805,]
+IB_Monthly_geom30[,2:3]=NA
+
+
+# IB
+for(j in 2:3){
+  for(i in 1:805){
+    x=i
+    y1=x+11
+    y2=x+359
+    IB_Monthly_cmp12[i,j] = prod(IB_plus1[x:y1, j])-1
+    IB_Monthly_cmp30[i,j] = prod(IB_plus1[x:y2, j])-1
+    IB_Monthly_geom12[i,j] = prod(IB_plus1[x:y1, j])^(1/12)-1
+    IB_Monthly_geom30[i,j] = prod(IB_plus1[x:y2, j])^(1/360)-1
+    IB_Monthly_arith12[i,j] = sum(IB[x:y1, j])/12
+    IB_Monthly_arith30[i,j] = sum(IB[x:y2, j])/360}
+  for(i in 806:1153){
+    x=i
+    y1=x+11
+    IB_Monthly_cmp12[i,j] = prod(IB_plus1[x:y1, j])-1
+    IB_Monthly_geom12[i,j] = prod(IB_plus1[x:y1, j])^(1/12)-1
+    IB_Monthly_arith12[i,j] = sum(IB[x:y1, j])/12}}
+
+IB_Monthly_cmp12 = IB_Monthly_cmp12 %>%
+  mutate("diff" = IB_Monthly_cmp12$t_bill - IB_Monthly_cmp12$inflation)
+
+IB_Monthly_cmp30 = IB_Monthly_cmp30 %>%
+  mutate("diff" = IB_Monthly_cmp30$t_bill - IB_Monthly_cmp30$inflation)
+
+IB_Monthly_geom12 = IB_Monthly_geom12 %>%
+  mutate("diff" = IB_Monthly_geom12$t_bill - IB_Monthly_geom12$inflation)
+
+IB_Monthly_geom30 = IB_Monthly_geom30 %>%
+  mutate("diff" = IB_Monthly_geom30$t_bill - IB_Monthly_geom30$inflation)
+
+IB_Monthly_arith12 = IB_Monthly_arith12 %>%
+  mutate("diff" = IB_Monthly_arith12$t_bill - IB_Monthly_arith12$inflation)
+
+IB_Monthly_arith30 = IB_Monthly_arith30 %>%
+  mutate("diff" = IB_Monthly_arith30$t_bill - IB_Monthly_arith30$inflation)
+```
+
+
+# Returns
+```{r}
+Monthly_Data <- read_excel("Project 2 Historical Data.xlsx", 
+    sheet = "60-40 Returns Monthly", range = "B10:D1174")
+
+Monthly_Data_plus1 = Monthly_Data
+Monthly_Data_plus1[,2:3] = 1 + Monthly_Data_plus1[,2:3]
+
+# 12-month compounded
+Monthly_Data_cmp12 = Monthly_Data
+Monthly_Data_cmp12 = Monthly_Data_cmp12[1:1153,]
+Monthly_Data_cmp12[,2:3]=NA
+
+# 30 yr compounded
+Monthly_Data_cmp30 = Monthly_Data
+Monthly_Data_cmp30 = Monthly_Data_cmp30[1:805,]
+Monthly_Data_cmp30[,2:3]=NA
+
+# 12-month arith avg
+Monthly_Data_arith12 = Monthly_Data
+Monthly_Data_arith12 = Monthly_Data_arith12[1:1153,]
+Monthly_Data_arith12[,2:3]=NA
+
+# 30 yr arith avg
+Monthly_Data_arith30 = Monthly_Data
+Monthly_Data_arith30 = Monthly_Data_arith30[1:805,]
+Monthly_Data_arith30[,2:3]=NA
+
+# 12-month geom avg
+Monthly_Data_geom12 = Monthly_Data
+Monthly_Data_geom12 = Monthly_Data_geom12[1:1153,]
+Monthly_Data_geom12[,2:3]=NA
+
+# 30 yr geom avg
+Monthly_Data_geom30 = Monthly_Data
+Monthly_Data_geom30 = Monthly_Data_geom30[1:805,]
+Monthly_Data_geom30[,2:3]=NA
+
+
+# Monthly_Data
+for(j in 2:3){
+  for(i in 1:805){
+    x=i
+    y1=x+11
+    y2=x+359
+    Monthly_Data_cmp12[i,j] = prod(Monthly_Data_plus1[x:y1, j])-1
+    Monthly_Data_cmp30[i,j] = prod(Monthly_Data_plus1[x:y2, j])-1
+    Monthly_Data_geom12[i,j] = prod(Monthly_Data_plus1[x:y1, j])^(1/12)-1
+    Monthly_Data_geom30[i,j] = prod(Monthly_Data_plus1[x:y2, j])^(1/360)-1
+    Monthly_Data_arith12[i,j] = sum(Monthly_Data[x:y1, j])/12
+    Monthly_Data_arith30[i,j] = sum(Monthly_Data[x:y2, j])/360}
+  for(i in 806:1153){
+    x=i
+    y1=x+11
+    Monthly_Data_cmp12[i,j] = prod(Monthly_Data_plus1[x:y1, j])-1
+    Monthly_Data_geom12[i,j] = prod(Monthly_Data_plus1[x:y1, j])^(1/12)-1
+    Monthly_Data_arith12[i,j] = sum(Monthly_Data[x:y1, j])/12}}
+
+# 12-month returns
+for(i in 1:1153){
+  x=1
+  data1 = 1
+  data2 = 1
+  while(x <= 12){
+    data1 = data1 * (1 + Monthly_Data$`Large Cap TR`[i+x-1])
+    data2 = data2 * (1 + Monthly_Data$FIXED[i+x-1])
+    x = x + 1}
+  Monthly_Data$`Large Cap TR`[i] = data1 - 1
+  Monthly_Data$FIXED[i] = data2 - 1}
+
+Monthly_Data = Monthly_Data[1:1153,]
+
+#12-month allocation returns
+for(i in 0:100){
+  alpha = i/100
+  Monthly_Data[paste0("LC", i)] = NA
+  for(j in 1:1153){
+    Monthly_Data[j, length(colnames(Monthly_Data))] = alpha*Monthly_Data$`Large Cap TR`[j]}
+  Monthly_Data[paste0("FIX", i)] = NA
+  for(j in 1:1153){
+    Monthly_Data[j, length(colnames(Monthly_Data))] = (1-alpha)*Monthly_Data$FIXED[j]}
+  Monthly_Data[paste0("Folio", i)] = NA
+  for(j in 1:1153){
+    Monthly_Data[j, length(colnames(Monthly_Data))] = Monthly_Data[j, length(colnames(Monthly_Data))-1] + Monthly_Data[j, length(colnames(Monthly_Data))-2]}}
 
 # write.csv(Monthly_Data, "Monthly_Data.csv", row.names=FALSE, quote=FALSE)
 Monthly_Data = read.csv("Monthly_Data.csv")
@@ -122,51 +261,51 @@ annual$Date = Data$Date
 
 ```{r}
 
-Inflate_Bill <- read_excel("Project 2 Historical Data.xlsx",
+IB <- read_excel("Project 2 Historical Data.xlsx",
     range = "AO11:AR1175", col_types = c("numeric",
         "skip", "skip", "numeric"))
-Inflate_Bill["Date"] = NA
-Inflate_Bill$Date = Monthly_Data1$Date
-Inflate_Bill = Inflate_Bill[,c(3,1:2)]
+IB["Date"] = NA
+IB$Date = Monthly_Data1$Date
+IB = IB[,c(3,1:2)]
 
-Inflate_Bill_x = Inflate_Bill
-Inflate_Bill_x[,2:3] = 1 + Inflate_Bill_x[,2:3]
-Inflate_Bill_Monthly = Inflate_Bill
-Inflate_Bill_Monthly = Inflate_Bill_Monthly[1:1153,]
-Inflate_Bill_Monthly[,2:3]=NA
+IB_x = IB
+IB_x[,2:3] = 1 + IB_x[,2:3]
+IB_Monthly = IB
+IB_Monthly = IB_Monthly[1:1153,]
+IB_Monthly[,2:3]=NA
 
 for(j in 2:3){
   for(i in 1:1153){
     x=i
     y=x+11
-    Inflate_Bill_Monthly[i,j] = prod(Inflate_Bill_x[x:y, j])-1}}
+    IB_Monthly[i,j] = prod(IB_x[x:y, j])-1}}
 
-Inflate_Bill_Monthly_1a = Inflate_Bill_Monthly
-Inflate_Bill_Monthly_1g = Inflate_Bill_Monthly
-Inflate_Bill_Monthly_1g[,2:3] = 1 + Inflate_Bill_Monthly_1g[,2:3]
-Inflate_Bill_Monthly_a = Inflate_Bill_Monthly_1a
-Inflate_Bill_Monthly_a[,2:3] = NA
-Inflate_Bill_Monthly_g = Inflate_Bill_Monthly_1g
-Inflate_Bill_Monthly_g[,2:3] = NA
+IB_Monthly_1a = IB_Monthly
+IB_Monthly_1g = IB_Monthly
+IB_Monthly_1g[,2:3] = 1 + IB_Monthly_1g[,2:3]
+IB_Monthly_a = IB_Monthly_1a
+IB_Monthly_a[,2:3] = NA
+IB_Monthly_g = IB_Monthly_1g
+IB_Monthly_g[,2:3] = NA
 
 for(j in 2:3){
   for(i in 1:794){
     x=i
     y=x+359
-    Inflate_Bill_Monthly_g[i,j] = prod(Inflate_Bill_Monthly_1g[x:y, j])^(1/360)-1
-    Inflate_Bill_Monthly_a[i,j] = sum(Inflate_Bill_Monthly_1a[x:y, j])/360}}
+    IB_Monthly_g[i,j] = prod(IB_Monthly_1g[x:y, j])^(1/360)-1
+    IB_Monthly_a[i,j] = sum(IB_Monthly_1a[x:y, j])/360}}
 
-Inflate_Bill_Monthly_g["diff"] = Inflate_Bill_Monthly_g$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-Inflate_Bill_Monthly_g$`Ibbotson® SBBI® US Inflation`
-Inflate_Bill_Monthly_a["diff"] = Inflate_Bill_Monthly_a$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-Inflate_Bill_Monthly_a$`Ibbotson® SBBI® US Inflation`
+IB_Monthly_g["diff"] = IB_Monthly_g$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-IB_Monthly_g$`Ibbotson® SBBI® US Inflation`
+IB_Monthly_a["diff"] = IB_Monthly_a$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-IB_Monthly_a$`Ibbotson® SBBI® US Inflation`
 
-Annual_Inflate_Bill = data.frame(matrix(ncol=4, nrow=97))
+Annual_IB = data.frame(matrix(ncol=4, nrow=97))
 
 x=1
 for(i in 1:1153){
   if((i-1)%%12 ==0){
-    Annual_Inflate_Bill[x,] = Inflate_Bill_Monthly[i,]
+    Annual_IB[x,] = IB_Monthly[i,]
     x = x + 1}}
-Annual_Inflate_Bill$Date = Data$Date
+Annual_IB$Date = Data$Date
 
 vect0 = vector()
 for(i in 0:100){
@@ -341,49 +480,17 @@ for(i in 0:100){
     Geom1[j, i+2] = Geom[j, i+2] - geom_vect[j]
     Geom1[j, i+2] = Geom1[j, i+2]/std}}
 
-
-annual_port = annual[, c(1, seq(6,306,3))]
-annual_d = data.frame(matrix(ncol=102,nrow=96))
-colnames(annual_d) = colnames(annual_port)
-
-for(i in 2:102){
-  for(j in 2:97){
-    annual_d[j-1, i] = annual_port[j,i] - annual_port[j-1,i]}}
-annual_d[,1] = Data$Date[2:97]
-
-
-annual_dd=annual_d
-for(i in 2:102){
-  for(j in 2:96){
-    if(annual_d[j-1,i] < 0 & annual_d[j,i] < 0){
-      annual_dd[j,i] = annual_dd[j,i] + annual_dd[j-1,i]
-    }}}
-    
-    annual_dd[j, i] = max(annual_d[x:y, i])}}
-
-colnames(annual_dd) = colnames(annual_d)
-annual_dd = data.frame(matrix(ncol=102,nrow=67))
-colnames(annual_dd) = colnames(annual_d)
-for(i in 2:102){
-  for(j in 1:67){
+total = Mean1
+total[,2:102]=NA
+for(i in 0:100){
+  for(j in 1:40){
     x=j
     y=x+29
-    annual_dd[j, i] = max(annual_d[x:y, i])}}
+    total[j,i+2] = (prod(Mean1[x:y, i+2]))}}
+total = total[1:40,]
 
-
-annual_draw = data.frame(matrix(ncol=5,nrow=101))
-colnames(annual_draw) = c("Allocation", "min", "max", "mean", "std")
-annual_draw[,1] = colnames(annual_d)[2:102]
-for(i in 1:101){
-  annual_draw[i, 2] = min(annual_dd[,i+1])
-  annual_draw[i, 3] = max(annual_dd[,i+1])
-  annual_draw[i, 4] = sum(annual_dd[,i+1])/67
-  annual_draw[i, 5] = sqrt(var(annual_dd[,i+1]))}
-
-
-
-stats = data.frame(matrix(nrow=101, ncol = 16))
-colnames(stats) = c("Allocation", "Spread_num", "Arith_min", "Arith_max", "Arith_Mean", "Arith_STD_DEV", "Arith_Variance", "Arith_Sharpe", "Arith_RRR", "Geom_min", "Geom_max", "Geom_Mean", "Geom_STD_DEV", "Geom_Variance", "Geom_Sharpe", "Geom_RRR")
+stats = data.frame(matrix(nrow=101, ncol = 18))
+colnames(stats) = c("Allocation", "Spread_num", "Arith_min", "Arith_max", "Arith_Mean", "Arith_STD_DEV", "Arith_Variance", "Arith_Sharpe", "Arith_RRR", "Geom_min", "Geom_max", "Geom_Mean", "Geom_STD_DEV", "Geom_Variance", "Geom_Sharpe", "Geom_RRR", "Total_Return", "Total_Return_std")
 stats$Spread_num = c(seq(0,100,1))
 Allocation = vector()
 for(i in 0:100){
@@ -411,7 +518,15 @@ for(i in 0:100){
     stats[i+1, 15] = sum(Geom1[,i+2])
     stats[i+1, 15] = stats[i+1, 15]/40
     stats[i+1, 16] = sum(Geom_rrr[,i+2])
-    stats[i+1, 16] = stats[i+1, 16]/40}
+    stats[i+1, 16] = stats[i+1, 16]/40
+    stats[i+1, 17] = sum(total[, i+2])/40
+    stats[i+1, 18] = sqrt(var(total[, i+2]))}
+
+stats = stats %>%
+  mutate("CI" = stats$Total_Return - 1.96 * stats$Total_Return_std)
+
+stats = stats %>%
+  mutate("RRR" = stats$Total_Return/stats$Total_Return_std)
 
 stats$Allocation = factor(stats$Allocation, levels = c(stats$Allocation))
 
@@ -693,10 +808,10 @@ ggplot(data = stats, aes(x = Spread_num, y = Geom_RRR)) +
 #     risk = sum(frame[frame<0])
 #     RRR_3[j,i+2] = count_reward*reward + count_risk*risk
 #     Arith_rrr_3[j, i+2] = STD_3[j, i+2]/Arith_3[j, i+2]
-#     Arith_Sharpe_3_without[j, i+2] = Arith_3[j, i+2] - Inflate_Bill_Monthly_a$diff[j]
+#     Arith_Sharpe_3_without[j, i+2] = Arith_3[j, i+2] - IB_Monthly_a$diff[j]
 #     Arith_Sharpe_3_with[j, i+2] = Arith_Sharpe_3_without[j, i+2]/STD_3[j, i+2]
 #     Geom_rrr_3[j, i+2] = STD_3[j, i+2]/Geom_3[j, i+2]
-#     Geom_Sharpe_3_without[j, i+2] = Geom_3[j, i+2] - Inflate_Bill_Monthly_g$diff[j]
+#     Geom_Sharpe_3_without[j, i+2] = Geom_3[j, i+2] - IB_Monthly_g$diff[j]
 #     Geom_Sharpe_3_with[j, i+2] = Geom_Sharpe_3_without[j, i+2]/STD_3[j, i+2]}}
 
 
@@ -986,42 +1101,42 @@ RRR_3a = Arith_3a
 RRR_3a[,2:102]=NA
 STD_3a = RRR_3a
 
-Inflate_Bill <- read_excel("Project 2 Historical Data.xlsx",
+IB <- read_excel("Project 2 Historical Data.xlsx",
     range = "AO11:AR1175", col_types = c("numeric",
         "skip", "skip", "numeric"))
-Inflate_Bill["Date"] = NA
-Inflate_Bill$Date = Monthly_Data1$Date
-Inflate_Bill = Inflate_Bill[,c(3,1:2)]
+IB["Date"] = NA
+IB$Date = Monthly_Data1$Date
+IB = IB[,c(3,1:2)]
 
-Inflate_Bill_x = Inflate_Bill
-Inflate_Bill_x[,2:3] = 1 + Inflate_Bill_x[,2:3]
-Inflate_Bill_Monthly = Inflate_Bill
-Inflate_Bill_Monthly = Inflate_Bill_Monthly[1:1153,]
-Inflate_Bill_Monthly[,2:3]=NA
+IB_x = IB
+IB_x[,2:3] = 1 + IB_x[,2:3]
+IB_Monthly = IB
+IB_Monthly = IB_Monthly[1:1153,]
+IB_Monthly[,2:3]=NA
 
 for(j in 2:3){
   for(i in 1:1153){
     x=i
     y=x+11
-    Inflate_Bill_Monthly[i,j] = prod(Inflate_Bill_x[x:y, j])-1}}
+    IB_Monthly[i,j] = prod(IB_x[x:y, j])-1}}
 
-Inflate_Bill_Monthly_1a = Inflate_Bill_Monthly
-Inflate_Bill_Monthly_1g = Inflate_Bill_Monthly
-Inflate_Bill_Monthly_1g[,2:3] = 1 + Inflate_Bill_Monthly_1g[,2:3]
-Inflate_Bill_Monthly_a = Inflate_Bill_Monthly_1a
-Inflate_Bill_Monthly_a[,2:3] = NA
-Inflate_Bill_Monthly_g = Inflate_Bill_Monthly_1g
-Inflate_Bill_Monthly_g[,2:3] = NA
+IB_Monthly_1a = IB_Monthly
+IB_Monthly_1g = IB_Monthly
+IB_Monthly_1g[,2:3] = 1 + IB_Monthly_1g[,2:3]
+IB_Monthly_a = IB_Monthly_1a
+IB_Monthly_a[,2:3] = NA
+IB_Monthly_g = IB_Monthly_1g
+IB_Monthly_g[,2:3] = NA
 
 for(j in 2:3){
   for(i in 1:794){
     x=i
     y=x+359
-    Inflate_Bill_Monthly_g[i,j] = prod(Inflate_Bill_Monthly_1g[x:y, j])^(1/360)-1
-    Inflate_Bill_Monthly_a[i,j] = sum(Inflate_Bill_Monthly_1a[x:y, j])/360}}
+    IB_Monthly_g[i,j] = prod(IB_Monthly_1g[x:y, j])^(1/360)-1
+    IB_Monthly_a[i,j] = sum(IB_Monthly_1a[x:y, j])/360}}
 
-Inflate_Bill_Monthly_g["diff"] = Inflate_Bill_Monthly_g$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-Inflate_Bill_Monthly_g$`Ibbotson® SBBI® US Inflation`
-Inflate_Bill_Monthly_a["diff"] = Inflate_Bill_Monthly_a$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-Inflate_Bill_Monthly_a$`Ibbotson® SBBI® US Inflation`
+IB_Monthly_g["diff"] = IB_Monthly_g$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-IB_Monthly_g$`Ibbotson® SBBI® US Inflation`
+IB_Monthly_a["diff"] = IB_Monthly_a$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-IB_Monthly_a$`Ibbotson® SBBI® US Inflation`
 
 
 
@@ -1037,10 +1152,10 @@ for(i in 0:100){
     risk = sum(frame[frame<0])
     RRR_3a[j,i+2] = count_reward*reward + count_risk*risk
     Arith_rrr_3a[j, i+2] = STD_3a[j, i+2]/Arith_3a[j, i+2]
-    Arith_Sharpe_3a_without[j, i+2] = Arith_3a[j, i+2] - Inflate_Bill_Monthly_a$diff[j]
+    Arith_Sharpe_3a_without[j, i+2] = Arith_3a[j, i+2] - IB_Monthly_a$diff[j]
     Arith_Sharpe_3a_with[j, i+2] = Arith_Sharpe_3a_without[j, i+2]/STD_3a[j, i+2]
     Geom_rrr_3a[j, i+2] = STD_3a[j, i+2]/Geom_3a[j, i+2]
-    Geom_Sharpe_3a_without[j, i+2] = Geom_3a[j, i+2] - Inflate_Bill_Monthly_g$diff[j]
+    Geom_Sharpe_3a_without[j, i+2] = Geom_3a[j, i+2] - IB_Monthly_g$diff[j]
     Geom_Sharpe_3a_with[j, i+2] = Geom_Sharpe_3a_without[j, i+2]/STD_3a[j, i+2]}}
 
 
@@ -1473,32 +1588,32 @@ ggplot(data = stats, aes(x = Spread_num, y = Geom_RRR)) +
 
 
 ```{r}
-Inflate_Bill <- read_excel("Project 2 Historical Data.xlsx", 
+IB <- read_excel("Project 2 Historical Data.xlsx", 
     range = "AO11:AR1175", col_types = c("numeric", 
         "skip", "skip", "numeric")) 
-Inflate_Bill["Date"] = NA
-Inflate_Bill$Date = Monthly_Data1$Date
-Inflate_Bill = Inflate_Bill[,c(3,1:2)]
+IB["Date"] = NA
+IB$Date = Monthly_Data1$Date
+IB = IB[,c(3,1:2)]
 
-Inflate_Bill_1a = Inflate_Bill
-Inflate_Bill_1g = Inflate_Bill
-Inflate_Bill_1g[,2:3] = 1 + Inflate_Bill_1g[,2:3]
-Inflate_Bill_a = Inflate_Bill_1a
-Inflate_Bill_a[,2:3] = NA
-Inflate_Bill_g = Inflate_Bill_1g
-Inflate_Bill_g[,2:3] = NA
+IB_1a = IB
+IB_1g = IB
+IB_1g[,2:3] = 1 + IB_1g[,2:3]
+IB_a = IB_1a
+IB_a[,2:3] = NA
+IB_g = IB_1g
+IB_g[,2:3] = NA
 
 for(j in 2:3){
   for(i in 1:1153){
     x=i
     y=i+11
-    Inflate_Bill_g[i,j] = prod(Inflate_Bill_1g[x:y, j])^(1/12)-1
-    Inflate_Bill_a[i,j] = sum(Inflate_Bill_1a[x:y, j])/12}}
-Inflate_Bill_g = Inflate_Bill_g[1:1153,]
-Inflate_Bill_a = Inflate_Bill_a[1:1153,]
+    IB_g[i,j] = prod(IB_1g[x:y, j])^(1/12)-1
+    IB_a[i,j] = sum(IB_1a[x:y, j])/12}}
+IB_g = IB_g[1:1153,]
+IB_a = IB_a[1:1153,]
 
-Inflate_Bill_g["diff"] = Inflate_Bill_g$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-Inflate_Bill_g$`Ibbotson® SBBI® US Inflation`
-Inflate_Bill_a["diff"] = Inflate_Bill_a$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-Inflate_Bill_a$`Ibbotson® SBBI® US Inflation`
+IB_g["diff"] = IB_g$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-IB_g$`Ibbotson® SBBI® US Inflation`
+IB_a["diff"] = IB_a$`Ibbotson® SBBI® US (30-Day) Treasury Bills`-IB_a$`Ibbotson® SBBI® US Inflation`
 
 
 Monthly_Data1a = Monthly_Data1[, c(1, seq(6,306,3))]
@@ -1543,7 +1658,7 @@ for(i in 2:102){
 #     Monthly_Data_a[j,i] = sum(Monthly_Data1a[x:y, i])/12
 #     std_dev = sqrt(var(Monthly_Data1a[x:y, i]))
 #     STD_DEV[j,i] = std_dev
-#     Sharpe_a[j,i] = Monthly_Data_a[j,i] - Inflate_Bill_a$diff[j]
+#     Sharpe_a[j,i] = Monthly_Data_a[j,i] - IB_a$diff[j]
 #     Sharpe_a[j,i] = Sharpe_a[j,i]/std_dev
 #     frame = Monthly_Data1a[x:y,i]
 #     count_reward1 = length(frame[frame>0])/12
@@ -1552,7 +1667,7 @@ for(i in 2:102){
 #     risk1 = sum(frame[frame<0])
 #     RRR[j,i] = count_reward1*reward1 + count_risk1*risk1
 #     Monthly_Data_g[j,i] = prod(Monthly_Data1g[x:y, i])^(1/12) - 1
-#     Sharpe_g[j,i] = Monthly_Data_g[j,i] - Inflate_Bill_g$diff[j]
+#     Sharpe_g[j,i] = Monthly_Data_g[j,i] - IB_g$diff[j]
 #     Sharpe_g[j,i] = Sharpe_g[j,i]/std_dev}}
 
 ```
@@ -2197,7 +2312,7 @@ Sharpe[,2:102] = NA
 
 for(i in 0:100){
   for(j in 1:1164){
-    Sharpe[j, i+2] = Mean2[j, i+2] - Inflate_Bill$diff[j]}}
+    Sharpe[j, i+2] = Mean2[j, i+2] - IB$diff[j]}}
 
 stats1 = data.frame(matrix(nrow=101, ncol = 9))
 colnames(stats1) = c("Allocation", "Spread_num", "min", "max", "Mean", "STD_DEV", "Variance", "Sharpe", "RRR")
